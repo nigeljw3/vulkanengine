@@ -1,9 +1,9 @@
 #ifndef controller_h
 #define controller_h
 
-#include <vulkan/vulkan.h>
+#include "types.h"
 
-const uint32_t InvalidIndex = 0xffffffff;
+#include <vulkan/vulkan.h>
 
 class Controller
 {
@@ -17,8 +17,10 @@ public:
 	VkDevice& GetDevice() { return device; }
 	VkInstance& GetInstance() { return instance; }
 	bool Configure(VkSurfaceKHR& surface);
-	bool PresentModeSupported(VkPresentModeKHR& presentMode, VkSurfaceKHR& surface);
-	bool SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat& surfaceFormat);
+	bool PresentModeSupported(VkSurfaceKHR& surface, VkPresentModeKHR presentMode);
+	bool SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat surfaceFormat);
+	
+	VkPhysicalDeviceMemoryProperties& GetMemoryProperties() { return memProperties; }
 	
 	//VkSurfaceCapabilitiesKHR* GetCapabilities() { return &capabilities; }
 	//uint32_t GetQueueFamilyId() { return queueFamilyId; }
@@ -40,6 +42,8 @@ private:
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;
 	VkSurfaceCapabilitiesKHR capabilities;
+	VkPhysicalDeviceMemoryProperties memProperties;
+	
 	uint32_t queueFamilyId = InvalidIndex;
 	const char* layer = "VK_LAYER_LUNARG_standard_validation";
 	const uint32_t graphicsQueueIndex = 0;

@@ -34,8 +34,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 bool Controller::Init()
 {
-	bool supported = false;
-	
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "Hello Triangle";
@@ -53,21 +51,57 @@ bool Controller::Init()
 
 	VkExtensionProperties* extensions = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties)*extensionCount));
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions);
-
-	char** requestedExtensions;
-	requestedExtensions = static_cast<char**>(malloc(sizeof(char*)*extensionCount));
 	
 	for(uint32_t i = 0; i < extensionCount; ++i)
 	{
 		std::cout << extensions[i].extensionName << std::endl;
-		
-		requestedExtensions[i] = static_cast<char*>(malloc(sizeof(char)*VK_MAX_EXTENSION_NAME_SIZE));
-		strncpy(requestedExtensions[i], extensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE);
 	}
+	
+	uint32_t requestedExtensionCount = 3;
+	
+	const char* requestedExtensions[] =
+	{
+		"VK_KHR_surface",
+		"VK_KHR_win32_surface",
+		"VK_EXT_debug_report"
+	};
+	//requestedExtensions = static_cast<char**>(malloc(sizeof(char*)*extensionCount));
+	
+	bool supported = false;
+	
+	for(uint32_t i = 0; i < requestedExtensionCount; ++i)
+	{
+		//std::cout << extensions[i].extensionName << std::endl;
+		
+		//requestedExtensions[i] = static_cast<char*>(malloc(sizeof(char)*VK_MAX_EXTENSION_NAME_SIZE));
+		
+		//strncpy(requestedExtensions[i], extensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE);
+	
+		supported = false;
+	
+		for(uint32_t j = 0; j < extensionCount; ++j)
+		{
+			if (strncmp(requestedExtensions[i], extensions[j].extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0)
+			{
+				supported = true;
+			}
+		}
+		
+		if (supported == false)
+		{
+			std::cout << "Extension " << requestedExtensions[i] << " not supported" << std::endl;
+			
+			break;
+		}
+	}
+
+	//strncpy(requestedExtensions[0], "VK_KHR_surface", VK_MAX_EXTENSION_NAME_SIZE);
+	//strncpy(requestedExtensions[1], "VK_KHR_win32_surface", VK_MAX_EXTENSION_NAME_SIZE);
+	//strncpy(requestedExtensions[2], "VK_EXT_debug_report", VK_MAX_EXTENSION_NAME_SIZE);
 	
 	//bool supported = windowView.CheckExtensionsSupport(extensionCount, extensions);
 			
-	createInfo.enabledExtensionCount = extensionCount;
+	createInfo.enabledExtensionCount = requestedExtensionCount;
 	createInfo.ppEnabledExtensionNames = requestedExtensions;
 	
 	uint32_t layerCount;
@@ -99,7 +133,7 @@ bool Controller::Init()
 	
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
 	
-	if (result == false)
+	if (result != VK_SUCCESS)
 	{
 		std::cout << "Failed to create instance" << std::endl;
 	}	
@@ -153,16 +187,18 @@ bool Controller::Init()
 	}
 
 	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+	
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
 	free(devices);
 	free(availableLayers);
 	
-	for(uint32_t i = 0; i < extensionCount; ++i)
+	/*for(uint32_t i = 0; i < extensionCount; ++i)
 	{
 		free(requestedExtensions[i]);
-	}
+	}*/
 
-	free(requestedExtensions);
+	//free(requestedExtensions);
 	free(extensions);
 	
 	return true;
@@ -232,16 +268,34 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
     VkExtensionProperties* availableDeviceExtensions = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties)*deviceExtensionCount));
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, availableDeviceExtensions);
 	
-	char** requestedDeviceExtensions;
-	requestedDeviceExtensions = static_cast<char**>(malloc(sizeof(char*)*deviceExtensionCount));
+	uint32_t requestedDeviceExtensionCount = 1;
+	
+	//char** requestedDeviceExtensions;
+	//requestedDeviceExtensions = static_cast<char**>(malloc(sizeof(char*)*deviceExtensionCount));
+	
+	const char* requestedDeviceExtension = "VK_KHR_swapchain";
+	
+	bool supported = false;
 	
 	for(uint32_t i = 0; i < deviceExtensionCount; ++i)
 	{
 		std::cout << availableDeviceExtensions[i].extensionName << std::endl;
 		
-		requestedDeviceExtensions[i] = static_cast<char*>(malloc(sizeof(char)*VK_MAX_EXTENSION_NAME_SIZE));
-		strncpy(requestedDeviceExtensions[i], availableDeviceExtensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE);
+		//requestedDeviceExtensions[i] = static_cast<char*>(malloc(sizeof(char)*VK_MAX_EXTENSION_NAME_SIZE));
+		//strncpy(requestedDeviceExtensions[i], availableDeviceExtensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE);
+		
+		if (strncmp(requestedDeviceExtension, availableDeviceExtensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0)
+		{
+			supported = true;
+		}
 	}
+	
+	if (supported == false)
+	{
+		std::cout << "VK_KHR_swapchain device extension not supported" << std::endl;
+	}
+	
+	//strncpy(requestedDeviceExtensions[0], "VK_KHR_swapchain", VK_MAX_EXTENSION_NAME_SIZE);
 	
 	VkDeviceCreateInfo deviceCreateInfo = {};
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -250,8 +304,8 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
     deviceCreateInfo.ppEnabledLayerNames = &layer;
 	deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
 	deviceCreateInfo.queueCreateInfoCount = 1;
-	deviceCreateInfo.enabledExtensionCount = deviceExtensionCount;
-	deviceCreateInfo.ppEnabledExtensionNames = requestedDeviceExtensions;
+	deviceCreateInfo.enabledExtensionCount = requestedDeviceExtensionCount;
+	deviceCreateInfo.ppEnabledExtensionNames = &requestedDeviceExtension;
 	
 	VkResult deviceResult = vkCreateDevice(physicalDevice, &deviceCreateInfo, nullptr, &device);
 	
@@ -260,12 +314,12 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 		std::cout << "failed to create device" << std::endl;
 	}
 	
-	for(uint32_t i = 0; i < deviceExtensionCount; ++i)
-	{
-		free(requestedDeviceExtensions[i]);
-	}
+	//for(uint32_t i = 0; i < deviceExtensionCount; ++i)
+	//{
+	//	free(requestedDeviceExtensions[i]);
+	//}
 
-	free(requestedDeviceExtensions);
+	//free(requestedDeviceExtensions);
 	free(availableDeviceExtensions);
 	
 	return true;
@@ -315,7 +369,7 @@ void Controller::PrintCapabilities()
 	std::cout << capabilities.supportedUsageFlags << std::endl;
 }
 
-bool Controller::PresentModeSupported(VkPresentModeKHR& presentMode, VkSurfaceKHR& surface)
+bool Controller::PresentModeSupported(VkSurfaceKHR& surface, VkPresentModeKHR presentMode)
 {
 	uint32_t presentModeCount;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
@@ -344,7 +398,7 @@ bool Controller::PresentModeSupported(VkPresentModeKHR& presentMode, VkSurfaceKH
 	return supported;
 }
 
-bool Controller::SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat& surfaceFormat)
+bool Controller::SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat surfaceFormat)
 {
 	uint32_t formatCount;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);

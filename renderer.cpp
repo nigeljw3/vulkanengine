@@ -1,4 +1,9 @@
 #include "renderer.h"
+#include "types.h"
+
+#ifdef __STDC_LIB_EXT1__ 
+#define __STDC_WANT_LIB_EXT1__ 1
+#endif
 
 #include <iostream>
 #include <vector>
@@ -6,9 +11,11 @@
 #include <fstream>
 #include <cstdio>
 #include <limits>
+#include <stdexcept>
 
-Renderer::Renderer(VkExtent2D& extent)
-: imageExtent(extent)
+Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProps)
+:	imageExtent(extent),
+	memProperties(memProps)
 {
 }
 
@@ -17,7 +24,7 @@ Renderer::~Renderer()
 	
 }
 
-bool Renderer::Init(VkDevice& device, VkFormat& surfaceFormat, const VkImageView* imageView, uint32_t queueFamilyId)
+bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageView, uint32_t queueFamilyId)
 {
 	bool result = false;
 	
@@ -25,6 +32,8 @@ bool Renderer::Init(VkDevice& device, VkFormat& surfaceFormat, const VkImageView
 	char* vertexShader;
 	size_t fragmentShaderFileSize;
 	char* fragmentShader;
+	
+	SetupVertexBuffer(device);
 	
 	try
 	{
@@ -93,11 +102,11 @@ bool Renderer::Init(VkDevice& device, VkFormat& surfaceFormat, const VkImageView
 	
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	//vertexInputInfo.vertexBindingDescriptionCount = 0;
-	//vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	//vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	//vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-	
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = numAttrDesc;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
+		
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -349,9 +358,17 @@ VkCommandBuffer* Renderer::ConstructFrame()
 	
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	//kCmdDraw(commandBuffer, 3, 1, 0, 0);
+	
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+	VkBuffer vertexBuffers[] = {vertexBuffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	vkCmdDraw(commandBuffer, sizeof(vertexInfo), 1, 0, 0);
 	
 	vkCmdEndRenderPass(commandBuffer);
 	
@@ -363,4 +380,81 @@ VkCommandBuffer* Renderer::ConstructFrame()
 	}
 	
 	return &commandBuffer;
+}
+
+bool Renderer::SetupVertexBuffer(VkDevice& device)
+{
+	bindingDescription.binding = 0;
+	bindingDescription.stride = sizeof(vertexInfo);
+	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	
+	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
+	
+	attributeDescriptions[0].binding = 0;
+	attributeDescriptions[0].location = 0;
+	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[0].offset = 0;
+	
+	attributeDescriptions[1].binding = 0;
+	attributeDescriptions[1].location = 1;
+	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[1].offset = sizeof(float[3]);
+	
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(float[3]) * numVertices;
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
+
+	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	
+	uint32_t memTypeIndex = InvalidIndex;
+	
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+	{
+		if ((memRequirements.memoryTypeBits & (1 << i)) &&
+			(memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
+			return i;
+		}
+	}
+	
+	if (memTypeIndex == InvalidIndex)
+	{
+		throw std::runtime_error("Memory property combination not supported");
+	}
+	
+	VkMemoryAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = memTypeIndex;
+		
+    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer);
+    
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create vertex buffer");
+    }
+	
+	VkDeviceMemory vertexBufferMemory;
+	
+	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+	
+	void* data;
+	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	//std::memcpy_s(data, sizeof(data), vertexInfo, (size_t) bufferInfo.size)
+	memcpy(data, vertexInfo, (size_t) bufferInfo.size);
+	vkUnmapMemory(device, vertexBufferMemory);
+		
+	result = vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory);
+	
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Vertex buffer memory allocation failed");
+	}
+	
+	return true;
 }

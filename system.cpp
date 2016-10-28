@@ -74,6 +74,8 @@ bool System::DestroySurface(VkInstance& instance, VkSurfaceKHR& surface)
 {
 	auto DestroySurfaceKHR = (PFN_vkDestroySurfaceKHR) vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR");
 	DestroySurfaceKHR(instance, surface, nullptr);
+
+	return true;
 }
 
 bool System::CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions)

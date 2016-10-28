@@ -8,7 +8,7 @@
 class Compositor
 {
 public:
-	Compositor();
+	Compositor(VkPhysicalDeviceMemoryProperties& memProperties);
 	~Compositor();
 	
 	bool Init(VkDevice& device,
@@ -20,7 +20,9 @@ public:
 	void Loop();
 	bool Destroy(VkDevice& device);
 	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);
-
+	VkFormat GetSurfaceFormat() { return surfaceFormat; }
+	VkPresentModeKHR GetPresentMode() { return presentMode; }
+	
 private:
 	void PrintCapabilities();
 
@@ -31,6 +33,10 @@ private:
 	VkSemaphore signalSemaphore;
 	VkSwapchainKHR swapChain;
 	VkImageView imageView;
+	VkPhysicalDeviceMemoryProperties memProperties;
+	
+	const VkFormat surfaceFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	const VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 };
 
 #endif

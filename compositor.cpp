@@ -7,7 +7,8 @@
 #include <cstdio>
 #include <limits>
 
-Compositor::Compositor()
+Compositor::Compositor(VkPhysicalDeviceMemoryProperties& memProps)
+: memProperties(memProps)
 {
 	
 }
@@ -24,9 +25,6 @@ bool Compositor::Init(VkDevice& device,
 					  uint32_t presentQueueIndex)
 {	
 	//bool supported = false;
-
-	VkFormat surfaceFormat = VK_FORMAT_B8G8R8A8_UNORM;
-	VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 	VkSurfaceTransformFlagBitsKHR transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 	
 	//VkSurfaceFormatKHR swapSurfaceFormat;
@@ -102,7 +100,7 @@ bool Compositor::Init(VkDevice& device,
 		std::cout << "Image view creation failed" << std::endl;
 	}
 	
-	graphicsEngine = new Renderer(screenExtent);
+	graphicsEngine = new Renderer(screenExtent, memProperties);
 	
 	graphicsEngine->Init(device, surfaceFormat, &imageView, queueFamilyId);
 	
