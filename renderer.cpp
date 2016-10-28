@@ -358,17 +358,15 @@ VkCommandBuffer* Renderer::ConstructFrame()
 	
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	
-	//vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	
-	//kCmdDraw(commandBuffer, 3, 1, 0, 0);
-	
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
+	//vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+		
 	VkBuffer vertexBuffers[] = {vertexBuffer};
 	VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdDraw(commandBuffer, sizeof(vertexInfo), 1, 0, 0);
+	vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
 	
 	vkCmdEndRenderPass(commandBuffer);
 	
@@ -385,7 +383,7 @@ VkCommandBuffer* Renderer::ConstructFrame()
 bool Renderer::SetupVertexBuffer(VkDevice& device)
 {
 	bindingDescription.binding = 0;
-	bindingDescription.stride = sizeof(vertexInfo);
+	bindingDescription.stride = sizeof(float[3]) * 2;
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	
 	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
@@ -402,13 +400,22 @@ bool Renderer::SetupVertexBuffer(VkDevice& device)
 	
 	VkBufferCreateInfo bufferInfo = {};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(float[3]) * numVertices;
+	bufferInfo.size = sizeof(float[3]) * numVertices * 2;
 	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	
+	std::cout << bufferInfo.size << std::endl;
+	
+	VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer);
+    	
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create vertex buffer");
+    }
+	
 	VkMemoryRequirements memRequirements;
 	vkGetBufferMemoryRequirements(device, vertexBuffer, &memRequirements);
-
+	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	
 	uint32_t memTypeIndex = InvalidIndex;
@@ -418,7 +425,7 @@ bool Renderer::SetupVertexBuffer(VkDevice& device)
 		if ((memRequirements.memoryTypeBits & (1 << i)) &&
 			(memProperties.memoryTypes[i].propertyFlags & properties) == properties)
 		{
-			return i;
+			memTypeIndex = i;
 		}
 	}
 	
@@ -431,30 +438,24 @@ bool Renderer::SetupVertexBuffer(VkDevice& device)
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = memTypeIndex;
-		
-    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer);
-    
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create vertex buffer");
-    }
 	
-	VkDeviceMemory vertexBufferMemory;
+	std::cout << memRequirements.size << std::endl;
+	std::cout << memTypeIndex << std::endl;
 	
-	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
-	
-	void* data;
-	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-	//std::memcpy_s(data, sizeof(data), vertexInfo, (size_t) bufferInfo.size)
-	memcpy(data, vertexInfo, (size_t) bufferInfo.size);
-	vkUnmapMemory(device, vertexBufferMemory);
-		
 	result = vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory);
 	
 	if (result != VK_SUCCESS)
 	{
 		throw std::runtime_error("Vertex buffer memory allocation failed");
 	}
+	
+	void* data;
+	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	//std::memcpy_s(data, sizeof(data), vertexInfo, (size_t) bufferInfo.size)
+	memcpy(data, vertexInfo, (size_t) bufferInfo.size);
+	vkUnmapMemory(device, vertexBufferMemory);
+	
+	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
 	
 	return true;
 }
