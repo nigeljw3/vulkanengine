@@ -37,6 +37,8 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	SetupServerSideVertexBuffer(device);
 	
+	SetupIndexBuffer(device);
+	
 	SetupShaderParameters();
 	
 	try
@@ -328,14 +330,21 @@ bool Renderer::Destroy(VkDevice& device)
 {
 	vkFreeCommandBuffers(device, commandPool, 1, &transferCommandBuffer);
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+	vkDestroyCommandPool(device, commandPool, nullptr);
 	
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
-	vkFreeMemory(device, transferBufferMemory, nullptr);
+	vkFreeMemory(device, vertexTransferBufferMemory, nullptr);
 	
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	vkDestroyBuffer(device, transferBuffer, nullptr);
+	vkDestroyBuffer(device, vertexTransferBuffer, nullptr);
 	
-	vkDestroyCommandPool(device, commandPool, nullptr);
+	vkFreeMemory(device, indexBufferMemory, nullptr);
+	vkFreeMemory(device, indexTransferBufferMemory, nullptr);
+	
+	vkDestroyBuffer(device, indexBuffer, nullptr);
+	vkDestroyBuffer(device, indexTransferBuffer, nullptr);
+	
+	
 	vkDestroyFramebuffer(device, framebuffer, nullptr);
 	vkDestroyPipeline(device, pipeline, nullptr);
 	vkDestroyRenderPass(device, renderPass, nullptr);
@@ -375,8 +384,10 @@ VkCommandBuffer* Renderer::ConstructFrame()
 	VkBuffer vertexBuffers[] = {vertexBuffer};
 	VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-	vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
+	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	
+	vkCmdDrawIndexed(commandBuffer, sizeof(indices), 1, 0, 0, 0);
+	//vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
 	
 	vkCmdEndRenderPass(commandBuffer);
 	
@@ -496,7 +507,7 @@ bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
     bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &transferBuffer);
+    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &vertexTransferBuffer);
 	
 	if (result != VK_SUCCESS)
 	{
@@ -506,26 +517,26 @@ bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
     VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	
 	uint32_t allocSize;
-	uint32_t transferMemTypeIndex = GetMemoryTypeIndex(device, transferBuffer, properties, allocSize);
+	uint32_t transferMemTypeIndex = GetMemoryTypeIndex(device, vertexTransferBuffer, properties, allocSize);
 	
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = allocSize;
     allocInfo.memoryTypeIndex = transferMemTypeIndex;
 	
-    result = vkAllocateMemory(device, &allocInfo, nullptr, &transferBufferMemory);
+    result = vkAllocateMemory(device, &allocInfo, nullptr, &vertexTransferBufferMemory);
 	
 	if (result != VK_SUCCESS)
 	{
         throw std::runtime_error("Buffer allocation failed");
     }
 
-    vkBindBufferMemory(device, transferBuffer, transferBufferMemory, 0);
+    vkBindBufferMemory(device, vertexTransferBuffer, vertexTransferBufferMemory, 0);
 
 	void* data;
-    vkMapMemory(device, transferBufferMemory, 0, bufferSize, 0, &data);	
+    vkMapMemory(device, vertexTransferBufferMemory, 0, bufferSize, 0, &data);	
     memcpy(data, vertexInfo, (size_t) bufferSize);
-    vkUnmapMemory(device, transferBufferMemory);
+    vkUnmapMemory(device, vertexTransferBufferMemory);
 	
 	bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -561,7 +572,7 @@ bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
 	return true;
 }
 
-VkCommandBuffer* Renderer::TransferBuffer(VkDevice& device)
+VkCommandBuffer* Renderer::TransferBuffers(VkDevice& device)
 {
 	VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -581,9 +592,71 @@ VkCommandBuffer* Renderer::TransferBuffer(VkDevice& device)
 	//copyRegion.srcOffset = 0;
 	//copyRegion.dstOffset = 0;
 	copyRegion.size = sizeof(vertexInfo);
-	vkCmdCopyBuffer(transferCommandBuffer, transferBuffer, vertexBuffer, 1, &copyRegion);
 	
+	vkCmdCopyBuffer(transferCommandBuffer, vertexTransferBuffer, vertexBuffer, 1, &copyRegion);
+	
+	copyRegion.size = sizeof(indices);
+	
+	vkCmdCopyBuffer(transferCommandBuffer, indexTransferBuffer, indexBuffer, 1, &copyRegion);
+		
 	vkEndCommandBuffer(transferCommandBuffer);
 	
 	return &transferCommandBuffer;
+}
+
+bool Renderer::SetupIndexBuffer(VkDevice& device)
+{
+	VkDeviceSize size = sizeof(indices);
+	
+	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+	
+    SetupBuffer(device, indexTransferBuffer, indexTransferBufferMemory, size, properties, usage);
+
+    void* data;
+    vkMapMemory(device, indexTransferBufferMemory, 0, size, 0, &data);
+    memcpy(data, indices, (size_t) size);
+    vkUnmapMemory(device, indexTransferBufferMemory);
+	
+	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+	SetupBuffer(device, indexBuffer, indexBufferMemory, size, properties, usage);
+
+	return true;
+}
+
+bool Renderer::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage)
+{
+	VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
+	
+	if (result != VK_SUCCESS)
+	{
+        throw std::runtime_error("Transfer buffer creation failed");
+    }
+
+	uint32_t allocSize;
+	uint32_t memTypeIndex = GetMemoryTypeIndex(device, buffer, properties, allocSize);
+	
+    VkMemoryAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = allocSize;
+    allocInfo.memoryTypeIndex = memTypeIndex;
+	
+    result = vkAllocateMemory(device, &allocInfo, nullptr, &memory);
+	
+	if (result != VK_SUCCESS)
+	{
+        throw std::runtime_error("Buffer allocation failed");
+    }
+
+    vkBindBufferMemory(device, buffer, memory, 0);
+	
+	return true;
 }

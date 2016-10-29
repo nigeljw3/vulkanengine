@@ -104,7 +104,7 @@ bool Compositor::Init(VkDevice& device,
 	
 	graphicsEngine->Init(device, surfaceFormat, &imageView, queueFamilyId);
 	
-	VkCommandBuffer* transferCommandBuffer = graphicsEngine->TransferBuffer(device);
+	VkCommandBuffer* transferCommandBuffer = graphicsEngine->TransferBuffers(device);
 	
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
