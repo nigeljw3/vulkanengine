@@ -104,6 +104,16 @@ bool Compositor::Init(VkDevice& device,
 	
 	graphicsEngine->Init(device, surfaceFormat, &imageView, queueFamilyId);
 	
+	VkCommandBuffer* transferCommandBuffer = graphicsEngine->TransferBuffer(device);
+	
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = transferCommandBuffer;
+
+	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphicsQueue);
+		
 	VkCommandBuffer* commandBuffer = graphicsEngine->ConstructFrame();
 	
 	VkSemaphoreCreateInfo semaphoreInfo = {};
@@ -123,7 +133,7 @@ bool Compositor::Init(VkDevice& device,
 	
 	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	
-	VkSubmitInfo submitInfo = {};
+	submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &waitSemaphore;

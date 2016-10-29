@@ -16,11 +16,16 @@ public:
 	
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageView, uint32_t queueFamilyId);
 	VkCommandBuffer* ConstructFrame();
+	VkCommandBuffer* TransferBuffer(VkDevice& device);
 	bool Destroy(VkDevice& device);
 	
-	bool SetupVertexBuffer(VkDevice& device);
-
 private:
+	bool SetupClientSideVertexBuffer(VkDevice& device);
+	bool SetupServerSideVertexBuffer(VkDevice& device);
+	
+	bool SetupShaderParameters();
+	uint32_t GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize);
+
 	VkExtent2D imageExtent;
 	VkPhysicalDeviceMemoryProperties memProperties;
 	VkShaderModule vertexShaderModule;
@@ -31,8 +36,11 @@ private:
 	VkFramebuffer framebuffer;
 	VkCommandPool commandPool;
 	VkCommandBuffer commandBuffer;
+	VkCommandBuffer transferCommandBuffer;
+	VkBuffer transferBuffer;
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
+	VkDeviceMemory transferBufferMemory;
 	VkMemoryAllocateInfo allocInfo = {};
 
 	VkVertexInputAttributeDescription* attributeDescriptions;
