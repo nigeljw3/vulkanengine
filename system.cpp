@@ -39,11 +39,13 @@ bool System::Destroy()
 	return true;
 }
 
-void System::Loop()
+void System::Loop(Compositor& composer, VkDevice& device)
 {
 	while(!glfwWindowShouldClose(window))
 	{
         glfwPollEvents();
+		
+		composer.Draw(device);
     }
 }
 

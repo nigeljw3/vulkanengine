@@ -8,7 +8,9 @@
 #include <limits>
 
 Compositor::Compositor(VkPhysicalDeviceMemoryProperties& memProps)
-: memProperties(memProps)
+: imageCount(2),
+  drawIndex(0),
+  memProperties(memProps)
 {
 	
 }
@@ -37,7 +39,7 @@ bool Compositor::Init(VkDevice& device,
     //actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
     //actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
 	
-	uint32_t imageCount = 2;
+	
 	
 	VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
 	swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -64,9 +66,6 @@ bool Compositor::Init(VkDevice& device,
 		std::cout << "Swapchain creation failed" << std::endl;
 	}
 	
-	VkQueue presentQueue;
-	VkQueue graphicsQueue;
-	
 	vkGetDeviceQueue(device, queueFamilyId, graphicsQueueIndex, &graphicsQueue);
 	vkGetDeviceQueue(device, queueFamilyId, presentQueueIndex, &presentQueue);
 
@@ -76,45 +75,65 @@ bool Compositor::Init(VkDevice& device,
 	
 	images = static_cast<VkImage*>(malloc(sizeof(VkImage)*imageCount));
 	
+	imageViews = static_cast<VkImageView*>(malloc(sizeof(VkImageView)*imageCount));
+	
 	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images);
 	
-	VkImageViewCreateInfo imageViewCreateInfo = {};
-	imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	imageViewCreateInfo.image = images[0];
-	imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	imageViewCreateInfo.format = surfaceFormat;
-	imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-	imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-	imageViewCreateInfo.subresourceRange.levelCount = 1;
-	imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-	imageViewCreateInfo.subresourceRange.layerCount = 1;
-	
-	result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageView);
-	
-	if (result != VK_SUCCESS)
+	for (uint32_t i = 0; i < imageCount; ++i)
 	{
-		std::cout << "Image view creation failed" << std::endl;
+		VkImageViewCreateInfo imageViewCreateInfo = {};
+		imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		imageViewCreateInfo.image = images[i];
+		imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		imageViewCreateInfo.format = surfaceFormat;
+		imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		
+		result = vkCreateImageView(device, &imageViewCreateInfo, nullptr, &imageViews[i]);
+		
+		if (result != VK_SUCCESS)
+		{
+			std::cout << "Image view creation failed" << std::endl;
+		}
 	}
-	
+		
 	graphicsEngine = new Renderer(screenExtent, memProperties);
 	
-	graphicsEngine->Init(device, surfaceFormat, &imageView, queueFamilyId);
+	graphicsEngine->Init(device, surfaceFormat, imageViews, queueFamilyId);
 	
-	VkCommandBuffer* transferCommandBuffer = graphicsEngine->TransferBuffers(device);
+	VkCommandBuffer& staticTransferCommandBuffer = graphicsEngine->TransferStaticBuffers(device);
+	
+	//VkSubmitInfo submitInfo = {};
+	//submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	//submitInfo.commandBufferCount = 1;
+	//submitInfo.pCommandBuffers = transferCommandBuffer;
+
+	//vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	//vkQueueWaitIdle(graphicsQueue);
+	
+	VkCommandBuffer& dynamicTransferCommandBuffer = graphicsEngine->TransferDynamicBuffers(device);
+	
+	graphicsEngine->ConstructFrames();
+	
+	
+	VkCommandBuffer transferCommandBuffers[] = { staticTransferCommandBuffer, dynamicTransferCommandBuffer };
 	
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = transferCommandBuffer;
+	submitInfo.commandBufferCount = 2;
+	submitInfo.pCommandBuffers = transferCommandBuffers;
 
 	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(graphicsQueue);
 		
-	VkCommandBuffer* commandBuffer = graphicsEngine->ConstructFrame();
+	drawCommandBuffer = graphicsEngine->GetFrame(0);
 	
 	VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -122,10 +141,10 @@ bool Compositor::Init(VkDevice& device,
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &waitSemaphore);
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &signalSemaphore);
 	
-	if (result != VK_SUCCESS)
+	/*if (result != VK_SUCCESS)
 	{
 		std::cout << "Semaphore creation failed" << std::cout;
-	}
+	}*/
 	
 	uint32_t imageIndex;
 	uint64_t max64BitInt = std::numeric_limits<uint64_t>::max();
@@ -141,7 +160,7 @@ bool Compositor::Init(VkDevice& device,
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &signalSemaphore;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = commandBuffer;
+	submitInfo.pCommandBuffers = drawCommandBuffer;
 	
 	result = vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	
@@ -177,11 +196,133 @@ bool Compositor::Destroy(VkDevice& device)
 	
 	delete graphicsEngine;
 	
-	vkDestroyImageView(device, imageView, nullptr);
+	for(uint32_t i = 0; i < imageCount; ++i)
+	{
+		vkDestroyImageView(device, imageViews[i], nullptr);
+	}
+	
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
 	vkDestroyDevice(device, nullptr);
 		
 	free(images);
+	
+	return true;
+}
+
+bool Compositor::Draw(VkDevice& device)
+{
+	//graphicsEngine->Draw(device);
+	
+	//std::cout << "Draw" << std::endl;
+	
+	drawIndex = (drawIndex + 1) % 2;
+	
+	VkCommandBuffer& transferCommandBuffer = graphicsEngine->TransferDynamicBuffers(device);
+	
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &transferCommandBuffer;
+
+	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphicsQueue);
+	
+	//drawCommandBuffer = graphicsEngine->ConstructFrame();
+	drawCommandBuffer = graphicsEngine->GetFrame(drawIndex);
+		
+	/*if (result != VK_SUCCESS)
+	{
+		std::cout << "Semaphore creation failed" << std::cout;
+	}*/
+	
+	uint32_t imageIndex;
+	uint64_t max64BitInt = std::numeric_limits<uint64_t>::max();
+	vkAcquireNextImageKHR(device, swapChain, max64BitInt, waitSemaphore, VK_NULL_HANDLE, &imageIndex);
+	
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	
+	submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &signalSemaphore;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = drawCommandBuffer;
+	
+	VkResult result = vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Queue submit failed" << std::cout;
+	}
+	
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &signalSemaphore;
+	
+	//VkSwapchainKHR swapChains[] = {swapChain};
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &swapChain;
+	presentInfo.pImageIndices = &imageIndex;
+	//presentInfo.pResults = nullptr; 
+	
+	vkQueuePresentKHR(presentQueue, &presentInfo);
+	
+	vkQueueWaitIdle(presentQueue);
+		
+	//VkCommandBuffer* commandBuffer = graphicsEngine->ConstructFrame();
+	
+	//VkSemaphoreCreateInfo semaphoreInfo = {};
+    //semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	
+	//vkCreateSemaphore(device, &semaphoreInfo, nullptr, &waitSemaphore);
+	//vkCreateSemaphore(device, &semaphoreInfo, nullptr, &signalSemaphore);
+	
+	/*if (result != VK_SUCCESS)
+	{
+		std::cout << "Semaphore creation failed" << std::cout;
+	}*/
+	
+	/*uint32_t imageIndex;
+	uint64_t max64BitInt = std::numeric_limits<uint64_t>::max();
+	vkAcquireNextImageKHR(device, swapChain, max64BitInt, waitSemaphore, VK_NULL_HANDLE, &imageIndex);
+	
+	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	
+	submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &waitSemaphore;
+	submitInfo.pWaitDstStageMask = &waitStage;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &signalSemaphore;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = commandBuffer;
+	
+	VkResult result = vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	
+	if (result != VK_SUCCESS)
+	{
+		std::cout << "Queue submit failed" << std::cout;
+	}
+	
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &signalSemaphore;
+	
+	//VkSwapchainKHR swapChains[] = {swapChain};
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &swapChain;
+	presentInfo.pImageIndices = &imageIndex;
+	//presentInfo.pResults = nullptr; 
+	
+	vkQueuePresentKHR(presentQueue, &presentInfo);
+	
+	vkQueueWaitIdle(presentQueue);*/
 	
 	return true;
 }

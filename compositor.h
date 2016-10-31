@@ -23,8 +23,13 @@ public:
 	VkFormat GetSurfaceFormat() { return surfaceFormat; }
 	VkPresentModeKHR GetPresentMode() { return presentMode; }
 	
+	bool Draw(VkDevice& device);
+	
 private:
 	void PrintCapabilities();
+	
+	uint32_t imageCount;
+	uint32_t drawIndex;
 
 	Renderer* graphicsEngine;
 	VkSurfaceCapabilitiesKHR capabilities;
@@ -32,9 +37,15 @@ private:
 	VkSemaphore waitSemaphore;
 	VkSemaphore signalSemaphore;
 	VkSwapchainKHR swapChain;
-	VkImageView imageView;
+	VkImageView* imageViews;
 	VkPhysicalDeviceMemoryProperties memProperties;
 	
+	VkQueue presentQueue;
+	VkQueue graphicsQueue;
+	
+	VkCommandBuffer* drawCommandBuffer;
+	VkCommandBuffer* transferCommandBuffer;
+			
 	const VkFormat surfaceFormat = VK_FORMAT_B8G8R8A8_UNORM;
 	const VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
 };

@@ -48,7 +48,7 @@ int main()
 						  devCtrl.GetGraphicsQueueIndex(),
 						  devCtrl.GetPresentQueueIndex());
 
-			window.Loop();
+			window.Loop(composer, devCtrl.GetDevice());
 		}
 		
 		composer.Destroy(devCtrl.GetDevice());
