@@ -1,3 +1,18 @@
+/**
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "controller.h"
 
 #include <iostream>
@@ -7,14 +22,16 @@
 #include <cstdio>
 #include <limits>
 
+const char* layer = "VK_LAYER_LUNARG_standard_validation";
+
 Controller::Controller()
 {
-	
+	queuePriorities = static_cast<float*>(malloc(sizeof(float)*queueCount));
 }
 
 Controller::~Controller()
 {
-	
+	free(queuePriorities);
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -106,7 +123,7 @@ bool Controller::Init()
 			break;
 		}
 		
-		//std::cout << availableLayers[i].layerName << std::endl;
+		std::cout << availableLayers[i].layerName << std::endl;
 	}
 	
 	if (supported == false)
@@ -158,7 +175,7 @@ bool Controller::Init()
 	{
 		vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
 		
-		//std::cout << deviceProperties.deviceType << std::endl;
+		std::cout << deviceProperties.deviceType << std::endl;
 		
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		{
@@ -227,11 +244,7 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	{
 		std::cout << "surface presetation not supported" << std::endl;
 	}
-	
-	uint32_t queueCount = 2;
-	
-	float* queuePriorities = static_cast<float*>(malloc(sizeof(float)*queueCount));
-	
+
 	VkDeviceQueueCreateInfo queueCreateInfo = {};
 	
 	queuePriorities[graphicsQueueIndex] = 1.0f;

@@ -1,3 +1,18 @@
+/**
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "renderer.h"
 #include "types.h"
 
@@ -36,12 +51,14 @@ Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProp
 {
 	framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
 	drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
+	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
 }
 
 Renderer::~Renderer()
 {
 	free(framebuffers);
 	free(drawCommandBuffers);
+	free(attributeDescriptions);
 }
 
 bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
@@ -441,9 +458,7 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	bindingDescription.binding = 0;
 	bindingDescription.stride = sizeof(float[3]) * 2;
 	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-	
-	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
-	
+
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
 	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
