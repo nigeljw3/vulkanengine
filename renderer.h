@@ -3,21 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
-//const float vertexInfo[][3] =
-//	{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f},
-//     {0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f},
-//     {-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}};
-
-const float vertexInfo[][3] = {
-    {-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f},
-    {0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f},
-    {0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f},
-    {-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}
-};
-
-const uint16_t indices[] = {
-    0, 1, 2, 2, 3, 0
-};
+#include <glm/glm.hpp>
 
 class Renderer
 {
@@ -91,7 +77,9 @@ private:
 	const uint32_t numAttrDesc = 2;
 	const uint32_t numVertices = 3;
 	
-	float mvp[12][4] = {};
+	//float mvp[4][4] = {};
+	glm::mat4 mvp;
+	const uint32_t mat4Size = sizeof(float[4][4]);
 };
 
 #endif

@@ -16,7 +16,6 @@ public:
 			  uint32_t queueFamilyId,
 			  uint32_t graphicsQueueIndex,
 			  uint32_t presentQueueIndex);
-	//bool CreateSurface(VkInstance& instance, VkSurfaceKHR* surface);
 	void Loop();
 	bool Destroy(VkDevice& device);
 	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);

@@ -15,9 +15,20 @@
 #include <chrono>
 
 #define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/ext.hpp> //"glm/gtx/string_cast.hpp"
+
+float vertexInfo[][3] = {
+	{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f},
+	{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f},
+	{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f},
+	{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}
+};
+
+const uint16_t indices[] = {
+	0, 1, 2, 2, 3, 0
+};
 
 Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProps)
 :	imageExtent(extent),
@@ -25,7 +36,6 @@ Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProp
 {
 	framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
 	drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
-	
 }
 
 Renderer::~Renderer()
@@ -43,8 +53,6 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	size_t fragmentShaderFileSize;
 	char* fragmentShader;
 	
-	//SetupClientSideVertexBuffer(device);
-	
 	SetupServerSideVertexBuffer(device);
 	
 	SetupIndexBuffer(device);
@@ -52,42 +60,34 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	SetupUniformBuffer(device);
 	
 	SetupShaderParameters(device);
+
+	std::ifstream file("vert.spv", std::ios::ate | std::ios::binary);
 	
-	try
+	if (!file.is_open())
 	{
-		std::ifstream file("vert.spv", std::ios::ate | std::ios::binary);
-		
-		if (!file.is_open())
-		{
-			std::cout << "Failed to open shader file" << std::endl;
-		}
-		
-		vertexShaderFileSize = static_cast<size_t>(file.tellg());
-		vertexShader = static_cast<char*>(malloc(sizeof(char)*vertexShaderFileSize));
-		
-		file.seekg(0);
-		file.read(vertexShader, vertexShaderFileSize);
-		file.close();
-		
-		file.open("frag.spv", std::ios::ate | std::ios::binary);
-		
-		if (!file.is_open())
-		{
-			std::cout << "Failed to open shader file" << std::endl;
-		}
-		
-		fragmentShaderFileSize = static_cast<size_t>(file.tellg());
-		fragmentShader = static_cast<char*>(malloc(sizeof(char)*fragmentShaderFileSize));
-		
-		file.seekg(0);
-		file.read(fragmentShader, fragmentShaderFileSize);
-		file.close();
+		std::cout << "Failed to open shader file" << std::endl;
 	}
-	catch(std::exception e)
+	
+	vertexShaderFileSize = static_cast<size_t>(file.tellg());
+	vertexShader = static_cast<char*>(malloc(sizeof(char)*vertexShaderFileSize));
+	
+	file.seekg(0);
+	file.read(vertexShader, vertexShaderFileSize);
+	file.close();
+	
+	file.open("frag.spv", std::ios::ate | std::ios::binary);
+	
+	if (!file.is_open())
 	{
-		//std::cout << e.message() << std::endl;
-		std::cout << "exception" << std::endl;
+		std::cout << "Failed to open shader file" << std::endl;
 	}
+	
+	fragmentShaderFileSize = static_cast<size_t>(file.tellg());
+	fragmentShader = static_cast<char*>(malloc(sizeof(char)*fragmentShaderFileSize));
+	
+	file.seekg(0);
+	file.read(fragmentShader, fragmentShaderFileSize);
+	file.close();
 	
 	VkShaderModuleCreateInfo shaderCreateInfo = {};
 	shaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -156,7 +156,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	//rasterizer.depthBiasConstantFactor = 0.0f;
 	//rasterizer.depthBiasClamp = 0.0f;
@@ -346,9 +346,7 @@ bool Renderer::Destroy(VkDevice& device)
 {
 	vkFreeCommandBuffers(device, commandPool, 1, &staticTransferCommandBuffer);
 	vkFreeCommandBuffers(device, commandPool, 1, &dynamicTransferCommandBuffer);
-	
 	vkFreeCommandBuffers(device, commandPool, numDrawCmdBuffers, drawCommandBuffers);
-	
 	
 	vkDestroyCommandPool(device, commandPool, nullptr);
 	
@@ -426,7 +424,6 @@ void Renderer::ConstructFrames()
 		vkCmdBindIndexBuffer(drawCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		
 		vkCmdDrawIndexed(drawCommandBuffers[i], sizeof(indices), 1, 0, 0, 0);
-		//vkCmdDraw(commandBuffer, numVertices, 1, 0, 0);
 		
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
 		
@@ -474,11 +471,6 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	{
 		throw std::runtime_error("Descriptor set layout creation failed");
 	}
-
-	//VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	//pipelineLayoutInfo.setLayoutCount = 1;
-	//pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 		
 	VkDescriptorPoolSize poolSize = {};
 	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -513,7 +505,7 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(mvp);
+	bufferInfo.range = mat4Size;
 	
 	VkWriteDescriptorSet descriptorWrite = {};
 	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -645,7 +637,7 @@ void Renderer::SetupDynamicTransfer(VkDevice& device)
 	vkBeginCommandBuffer(dynamicTransferCommandBuffer, &beginInfo);
 	
 	VkBufferCopy copyRegion = {};
-	copyRegion.size = sizeof(mvp);
+	copyRegion.size = mat4Size;
 	
 	vkCmdCopyBuffer(dynamicTransferCommandBuffer, uniformTransferBuffer, uniformBuffer, 1, &copyRegion);
 	
@@ -678,9 +670,6 @@ VkCommandBuffer& Renderer::TransferStaticBuffers(VkDevice& device)
 	copyRegion.size = sizeof(indices);
 	vkCmdCopyBuffer(staticTransferCommandBuffer, indexTransferBuffer, indexBuffer, 1, &copyRegion);
 	
-	//copyRegion.size = sizeof(indices);
-	//vkCmdCopyBuffer(staticTransferCommandBuffer, uniformTransferBuffer, uniformBuffer, 1, &copyRegion);
-	
 	vkEndCommandBuffer(staticTransferCommandBuffer);
 	
 	return staticTransferCommandBuffer;
@@ -693,25 +682,18 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
+	glm::mat4 model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 proj = glm::perspective(glm::radians(45.0f), imageExtent.width / (float) imageExtent.height, 0.1f, 100.0f);
+	proj[1][1] *= -1;
 	
-	model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	//view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	//proj = glm::perspective(glm::radians(45.0f), imageExtent.width / (float) imageExtent.height, 0.1f, 10.0f);
-	//proj[1][1] *= -1;
+	mvp = proj * view * model;
 	
-	//glm::mat4 mvpUBO = model * view * proj;
-	glm::mat4 mvpUBO = model;
-	
-	std::memcpy(mvp, glm::value_ptr(mvpUBO), sizeof(mvp));
-	
-	VkDeviceSize size = sizeof(mvp);
+	VkDeviceSize size = mat4Size;
 	
 	void* data;
     vkMapMemory(device, uniformTransferBufferMemory, 0, size, 0, &data);
-    memcpy(data, mvp, (size_t) size);
+	memcpy(data, glm::value_ptr(mvp), (size_t) size);
     vkUnmapMemory(device, uniformTransferBufferMemory);
 	
 	return dynamicTransferCommandBuffer;
@@ -776,7 +758,7 @@ bool Renderer::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
 
 void Renderer::SetupUniformBuffer(VkDevice &device)
 {
-	VkDeviceSize size = sizeof(mvp);
+	VkDeviceSize size = mat4Size;
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -790,6 +772,5 @@ void Renderer::SetupUniformBuffer(VkDevice &device)
 }
 
 void Renderer::Draw(VkDevice &device)
-{	
-	TransferDynamicBuffers(device);
+{
 }

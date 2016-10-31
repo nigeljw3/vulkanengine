@@ -65,18 +65,11 @@ bool Controller::Init()
 		"VK_KHR_win32_surface",
 		"VK_EXT_debug_report"
 	};
-	//requestedExtensions = static_cast<char**>(malloc(sizeof(char*)*extensionCount));
 	
 	bool supported = false;
 	
 	for(uint32_t i = 0; i < requestedExtensionCount; ++i)
 	{
-		//std::cout << extensions[i].extensionName << std::endl;
-		
-		//requestedExtensions[i] = static_cast<char*>(malloc(sizeof(char)*VK_MAX_EXTENSION_NAME_SIZE));
-		
-		//strncpy(requestedExtensions[i], extensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE);
-	
 		supported = false;
 	
 		for(uint32_t j = 0; j < extensionCount; ++j)
@@ -94,13 +87,7 @@ bool Controller::Init()
 			break;
 		}
 	}
-
-	//strncpy(requestedExtensions[0], "VK_KHR_surface", VK_MAX_EXTENSION_NAME_SIZE);
-	//strncpy(requestedExtensions[1], "VK_KHR_win32_surface", VK_MAX_EXTENSION_NAME_SIZE);
-	//strncpy(requestedExtensions[2], "VK_EXT_debug_report", VK_MAX_EXTENSION_NAME_SIZE);
-	
-	//bool supported = windowView.CheckExtensionsSupport(extensionCount, extensions);
-			
+		
 	createInfo.enabledExtensionCount = requestedExtensionCount;
 	createInfo.ppEnabledExtensionNames = requestedExtensions;
 	
@@ -192,13 +179,6 @@ bool Controller::Init()
 
 	free(devices);
 	free(availableLayers);
-	
-	/*for(uint32_t i = 0; i < extensionCount; ++i)
-	{
-		free(requestedExtensions[i]);
-	}*/
-
-	//free(requestedExtensions);
 	free(extensions);
 	
 	return true;
@@ -270,9 +250,6 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	
 	uint32_t requestedDeviceExtensionCount = 1;
 	
-	//char** requestedDeviceExtensions;
-	//requestedDeviceExtensions = static_cast<char**>(malloc(sizeof(char*)*deviceExtensionCount));
-	
 	const char* requestedDeviceExtension = "VK_KHR_swapchain";
 	
 	bool supported = false;
@@ -280,9 +257,6 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	for(uint32_t i = 0; i < deviceExtensionCount; ++i)
 	{
 		std::cout << availableDeviceExtensions[i].extensionName << std::endl;
-		
-		//requestedDeviceExtensions[i] = static_cast<char*>(malloc(sizeof(char)*VK_MAX_EXTENSION_NAME_SIZE));
-		//strncpy(requestedDeviceExtensions[i], availableDeviceExtensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE);
 		
 		if (strncmp(requestedDeviceExtension, availableDeviceExtensions[i].extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0)
 		{
@@ -294,8 +268,6 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	{
 		std::cout << "VK_KHR_swapchain device extension not supported" << std::endl;
 	}
-	
-	//strncpy(requestedDeviceExtensions[0], "VK_KHR_swapchain", VK_MAX_EXTENSION_NAME_SIZE);
 	
 	VkDeviceCreateInfo deviceCreateInfo = {};
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -313,13 +285,7 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	{
 		std::cout << "failed to create device" << std::endl;
 	}
-	
-	//for(uint32_t i = 0; i < deviceExtensionCount; ++i)
-	//{
-	//	free(requestedDeviceExtensions[i]);
-	//}
 
-	//free(requestedDeviceExtensions);
 	free(availableDeviceExtensions);
 	
 	return true;
