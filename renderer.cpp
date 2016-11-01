@@ -34,21 +34,41 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext.hpp> //"glm/gtx/string_cast.hpp"
 
-float vertexInfo[][3] = {
+float vertexInfo2[][3] = {
 	{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f},
 	{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f},
 	{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f},
 	{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}
 };
 
-const uint16_t indices[] = {
-	0, 1, 2, 2, 3, 0
+const uint16_t indices2[] = {
+	0, 1, 2, 2, 3, 1
 };
 
 Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProps)
 :	imageExtent(extent),
 	memProperties(memProps)
 {
+	numVertsX = 7;
+	numVertsY = 7;
+	
+	numVerts = numVertsX * numVertsY;
+	numPrims = (numVertsX - 1) * (numVertsY - 1) * 2;
+	
+	uint32_t numComponents = 3;
+	
+	uint32_t vertInfoSize = sizeof(float)*numComponents*numVerts*2;
+	
+	mat4Size = vertInfoSize;
+	
+	vertexInfo = static_cast<float*>(malloc(vertInfoSize));
+	
+	numIndices = numPrims * 3;
+	
+	indicesBufferSize = sizeof(uint16_t)*numIndices;
+	
+	indices = static_cast<uint16_t*>(malloc(indicesBufferSize));
+	
 	framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
 	drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
 	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
@@ -59,6 +79,8 @@ Renderer::~Renderer()
 	free(framebuffers);
 	free(drawCommandBuffers);
 	free(attributeDescriptions);
+	free(vertexInfo);
+	free(indices);
 }
 
 bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
@@ -69,6 +91,53 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	char* vertexShader;
 	size_t fragmentShaderFileSize;
 	char* fragmentShader;
+	
+	float delta = 0.5f;
+	uint32_t index = 0;
+	float xStartPos = - ((numVertsX - 1) * delta) / 2;
+	float yStartPos = - ((numVertsY - 1) * delta) / 2;
+	float xPos = xStartPos;
+	float yPos = yStartPos;
+	float zPos = 0.0f;
+	
+	for (uint32_t i = 0; i < numVertsY; ++i)
+	{
+		for (uint32_t j = 0; j < numVertsX; ++j)
+		{
+			vertexInfo[index] = xPos;
+			vertexInfo[index + 1] = yPos;
+			vertexInfo[index + 2] = zPos;
+			
+			vertexInfo[index + 3] = 0.0f;
+			vertexInfo[index + 4] = 0.0f;
+			vertexInfo[index + 5] = 1.0f;
+						
+			index += 6;
+			xPos += delta;
+		}
+		
+		xPos = xStartPos;
+		
+		yPos += delta;
+	}
+		
+	index = 0;
+	
+	for (uint32_t i = 0; i < numVertsY - 1; ++i)
+	{
+		for (uint32_t j = 0; j < numVertsX - 1; ++j)
+		{			
+			indices[index] = i * numVertsX + j;
+			indices[index + 1] = indices[index] + 1;
+			indices[index + 2] = indices[index] + numVertsX;
+			
+			indices[index + 3] = indices[index + 2];
+			indices[index + 4] = indices[index + 3] + 1;
+			indices[index + 5] = indices[index + 1];
+			
+			index += 6;
+		}
+	}
 	
 	SetupServerSideVertexBuffer(device);
 	
@@ -172,7 +241,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	//rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	//rasterizer.depthBiasConstantFactor = 0.0f;
@@ -440,7 +509,7 @@ void Renderer::ConstructFrames()
 		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 1, &vertexBuffer, offsets);
 		vkCmdBindIndexBuffer(drawCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		
-		vkCmdDrawIndexed(drawCommandBuffers[i], sizeof(indices), 1, 0, 0, 0);
+		vkCmdDrawIndexed(drawCommandBuffers[i], numIndices, 1, 0, 0, 0);
 		
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
 		
@@ -615,7 +684,7 @@ bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 
 bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
 {
-	VkDeviceSize size = sizeof(vertexInfo);
+	VkDeviceSize size = mat4Size; //sizeof(vertexInfo);
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -679,10 +748,10 @@ VkCommandBuffer& Renderer::TransferStaticBuffers(VkDevice& device)
 	//copyRegion.srcOffset = 0;
 	//copyRegion.dstOffset = 0;
 	
-	copyRegion.size = sizeof(vertexInfo);
+	copyRegion.size = mat4Size;//sizeof(vertexInfo);
 	vkCmdCopyBuffer(staticTransferCommandBuffer, vertexTransferBuffer, vertexBuffer, 1, &copyRegion);
 	
-	copyRegion.size = sizeof(indices);
+	copyRegion.size = indicesBufferSize;
 	vkCmdCopyBuffer(staticTransferCommandBuffer, indexTransferBuffer, indexBuffer, 1, &copyRegion);
 	
 	vkEndCommandBuffer(staticTransferCommandBuffer);
@@ -716,7 +785,7 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
 
 bool Renderer::SetupIndexBuffer(VkDevice& device)
 {
-	VkDeviceSize size = sizeof(indices);
+	VkDeviceSize size = indicesBufferSize;
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;

@@ -94,7 +94,22 @@ private:
 	
 	//float mvp[4][4] = {};
 	glm::mat4 mvp;
-	const uint32_t mat4Size = sizeof(float[4][4]);
+	//const uint32_t mat4Size = sizeof(float[4][4]);
+	
+	uint32_t mat4Size;
+	
+	float* vertexInfo;
+	
+	uint16_t* indices;
+	uint16_t numIndices;
+	uint32_t indicesBufferSize;
+	
+	uint32_t numVertsX;
+	uint32_t numVertsY;
+	
+	uint32_t numVerts;
+	
+	uint32_t numPrims;
 };
 
 #endif
