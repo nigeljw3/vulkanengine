@@ -22,7 +22,12 @@
 #include <cstdio>
 #include <limits>
 
-const char* layer = "VK_LAYER_LUNARG_standard_validation";
+const char* layers[] = {
+	"VK_LAYER_LUNARG_standard_validation",
+	"VK_LAYER_RENDERDOC_Capture"
+};
+
+const uint32_t numLayers = 2;
 
 Controller::Controller()
 {
@@ -115,24 +120,27 @@ bool Controller::Init()
 		
 	supported = false;
 	
-	for(uint32_t i = 0; i < layerCount; ++i)
+	for(uint32_t i = 0; i < numLayers; ++i)
 	{
-		if (strcmp(layer, availableLayers[i].layerName) == 0)
+		for(uint32_t j = 0; j < layerCount; ++j)
 		{
-			supported = true;
-			break;
+			if (strcmp(layers[i], availableLayers[j].layerName) == 0)
+			{
+				supported = true;
+				break;
+			}
+			
+			std::cout << availableLayers[j].layerName << std::endl;
 		}
 		
-		std::cout << availableLayers[i].layerName << std::endl;
-	}
-	
-	if (supported == false)
-	{
-		std::cout << "Layer not supported:" << layer << std::endl;
+		if (supported == false)
+		{
+			std::cout << "Layer not supported:" << layers[i] << std::endl;
+		}
 	}
 	
 	createInfo.enabledLayerCount = 1;
-    createInfo.ppEnabledLayerNames = &layer;
+    createInfo.ppEnabledLayerNames = layers;
 	
 	
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
@@ -216,7 +224,7 @@ bool Controller::SetupQueue()
 	
 	for (uint32_t i = 0; i < queueFamilyCount; ++i)
 	{
-		std::cout << queueFamilies[i].queueCount << ", " << std::hex << queueFamilies[i].queueFlags << std::endl;
+		std::cout << "queue families: " << queueFamilies[i].queueCount << ", " << std::hex << queueFamilies[i].queueFlags << std::dec << std::endl;
 		
 		if (queueFamilies[i].queueCount > 0 && queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
@@ -286,7 +294,7 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 	deviceCreateInfo.enabledLayerCount = 1;
-    deviceCreateInfo.ppEnabledLayerNames = &layer;
+    deviceCreateInfo.ppEnabledLayerNames = layers;
 	deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
 	deviceCreateInfo.queueCreateInfoCount = 1;
 	deviceCreateInfo.enabledExtensionCount = requestedDeviceExtensionCount;

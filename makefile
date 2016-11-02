@@ -11,14 +11,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-VULKAN_PATH = /c/Dev/VulkanSDK/1.0.26.0
+VULKAN_PATH = /c/Dev/VulkanSDK/1.0.30.0
 GLFW_PATH = /c/Dev/glfw/glfw-3.2.1.bin.WIN32
 GLM_PATH = /C/Dev/glm
 
 CFLAGS = -std=c++11 -Wall
 INCLUDE = -I$(VULKAN_PATH)/include -I$(GLFW_PATH)/include -I$(GLM_PATH)
-LDFLAGS = -L$(VULKAN_PATH)/lib -L$(GLFW_PATH)/lib-mingw
-LDLIBS = -lvulkan -lglfw3 -lgdi32
+LDFLAGS = -L$(VULKAN_PATH)/Bin32 -L$(GLFW_PATH)/lib-mingw
+LDLIBS = -lvulkan-1 -lglfw3 -lgdi32
 DEFINES = -DVK_USE_PLATFORM_WIN32_KHR
 OBJS = renderer.o system.o controller.o compositor.o
 

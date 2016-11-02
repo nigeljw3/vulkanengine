@@ -34,41 +34,18 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext.hpp> //"glm/gtx/string_cast.hpp"
 
-float vertexInfo2[][3] = {
-	{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f},
-	{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f},
-	{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f},
-	{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}
-};
-
-const uint16_t indices2[] = {
-	0, 1, 2, 2, 3, 1
-};
-
 Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProps)
 :	imageExtent(extent),
 	memProperties(memProps)
-{
-	numVertsX = 7;
-	numVertsY = 7;
-	
+{	
 	numVerts = numVertsX * numVertsY;
 	numPrims = (numVertsX - 1) * (numVertsY - 1) * 2;
+	vertexInfoSize = sizeof(float) * numComponents * numVerts * 2;
+	numIndices = numPrims * numComponents;
+	indicesBufferSize = sizeof(uint16_t) * numIndices;
 	
-	uint32_t numComponents = 3;
-	
-	uint32_t vertInfoSize = sizeof(float)*numComponents*numVerts*2;
-	
-	mat4Size = vertInfoSize;
-	
-	vertexInfo = static_cast<float*>(malloc(vertInfoSize));
-	
-	numIndices = numPrims * 3;
-	
-	indicesBufferSize = sizeof(uint16_t)*numIndices;
-	
+	vertexInfo = static_cast<float*>(malloc(vertexInfoSize));
 	indices = static_cast<uint16_t*>(malloc(indicesBufferSize));
-	
 	framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
 	drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
 	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
@@ -76,11 +53,11 @@ Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProp
 
 Renderer::~Renderer()
 {
+	free(vertexInfo);
+	free(indices);
 	free(framebuffers);
 	free(drawCommandBuffers);
 	free(attributeDescriptions);
-	free(vertexInfo);
-	free(indices);
 }
 
 bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
@@ -105,8 +82,8 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 		for (uint32_t j = 0; j < numVertsX; ++j)
 		{
 			vertexInfo[index] = xPos;
-			vertexInfo[index + 1] = yPos;
-			vertexInfo[index + 2] = zPos;
+			vertexInfo[index + 1] = zPos;
+			vertexInfo[index + 2] = yPos;
 			
 			vertexInfo[index + 3] = 0.0f;
 			vertexInfo[index + 4] = 0.0f;
@@ -117,7 +94,6 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 		}
 		
 		xPos = xStartPos;
-		
 		yPos += delta;
 	}
 		
@@ -140,11 +116,8 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	}
 	
 	SetupServerSideVertexBuffer(device);
-	
 	SetupIndexBuffer(device);
-		
 	SetupUniformBuffer(device);
-	
 	SetupShaderParameters(device);
 
 	std::ifstream file("vert.spv", std::ios::ate | std::ios::binary);
@@ -499,18 +472,12 @@ void Renderer::ConstructFrames()
 		renderPassBeginInfo.framebuffer = framebuffers[i];
 	
 		vkBeginCommandBuffer(drawCommandBuffers[i], &beginInfo);
-		
 		vkCmdBeginRenderPass(drawCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-		
 		vkCmdBindDescriptorSets(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-			
 		vkCmdBindPipeline(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-			
 		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 1, &vertexBuffer, offsets);
 		vkCmdBindIndexBuffer(drawCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		
 		vkCmdDrawIndexed(drawCommandBuffers[i], numIndices, 1, 0, 0, 0);
-		
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
 		
 		result = vkEndCommandBuffer(drawCommandBuffers[i]);
@@ -589,7 +556,7 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = mat4Size;
+	bufferInfo.range = mvpSize;
 	
 	VkWriteDescriptorSet descriptorWrite = {};
 	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -638,12 +605,10 @@ bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 {
 	VkBufferCreateInfo bufferInfo = {};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(float[3]) * numVertices * 2;
+	bufferInfo.size = vertexInfoSize;
 	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	
-	std::cout << bufferInfo.size << std::endl;
-	
+
 	VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer);
     	
 	if (result != VK_SUCCESS)
@@ -684,7 +649,7 @@ bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 
 bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
 {
-	VkDeviceSize size = mat4Size; //sizeof(vertexInfo);
+	VkDeviceSize size = vertexInfoSize;
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -721,10 +686,12 @@ void Renderer::SetupDynamicTransfer(VkDevice& device)
 	vkBeginCommandBuffer(dynamicTransferCommandBuffer, &beginInfo);
 	
 	VkBufferCopy copyRegion = {};
-	copyRegion.size = mat4Size;
-	
+	copyRegion.size = mvpSize;
 	vkCmdCopyBuffer(dynamicTransferCommandBuffer, uniformTransferBuffer, uniformBuffer, 1, &copyRegion);
 	
+	copyRegion.size = vertexInfoSize;
+	vkCmdCopyBuffer(dynamicTransferCommandBuffer, vertexTransferBuffer, vertexBuffer, 1, &copyRegion);
+		
 	vkEndCommandBuffer(dynamicTransferCommandBuffer);
 }
 
@@ -748,9 +715,6 @@ VkCommandBuffer& Renderer::TransferStaticBuffers(VkDevice& device)
 	//copyRegion.srcOffset = 0;
 	//copyRegion.dstOffset = 0;
 	
-	copyRegion.size = mat4Size;//sizeof(vertexInfo);
-	vkCmdCopyBuffer(staticTransferCommandBuffer, vertexTransferBuffer, vertexBuffer, 1, &copyRegion);
-	
 	copyRegion.size = indicesBufferSize;
 	vkCmdCopyBuffer(staticTransferCommandBuffer, indexTransferBuffer, indexBuffer, 1, &copyRegion);
 	
@@ -766,14 +730,14 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
-	glm::mat4 model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 proj = glm::perspective(glm::radians(45.0f), imageExtent.width / (float) imageExtent.height, 0.1f, 100.0f);
+	glm::mat4 model; // = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 proj = glm::perspective(glm::radians(90.0f), imageExtent.width / (float) imageExtent.height, 0.1f, 100.0f);
 	proj[1][1] *= -1;
 	
 	mvp = proj * view * model;
 	
-	VkDeviceSize size = mat4Size;
+	VkDeviceSize size = mvpSize;
 	
 	void* data;
     vkMapMemory(device, uniformTransferBufferMemory, 0, size, 0, &data);
@@ -842,7 +806,7 @@ bool Renderer::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
 
 void Renderer::SetupUniformBuffer(VkDevice &device)
 {
-	VkDeviceSize size = mat4Size;
+	VkDeviceSize size = mvpSize;
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;

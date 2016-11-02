@@ -47,7 +47,7 @@ private:
 	bool SetupServerSideVertexBuffer(VkDevice& device);
 	void SetupUniformBuffer(VkDevice &device);
 	void SetupDynamicTransfer(VkDevice &device);
-	void SetupBufferTransfer(VkDevice &device);
+	void SetupStaticTransfer(VkDevice &device);
 	
 	bool SetupShaderParameters(VkDevice& device);
 	uint32_t GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize);
@@ -92,24 +92,23 @@ private:
 	const uint32_t numAttrDesc = 2;
 	const uint32_t numVertices = 3;
 	
-	//float mvp[4][4] = {};
 	glm::mat4 mvp;
-	//const uint32_t mat4Size = sizeof(float[4][4]);
-	
-	uint32_t mat4Size;
 	
 	float* vertexInfo;
-	
 	uint16_t* indices;
+	
+	const uint32_t mvpSize = sizeof(float)*16;
+	
+	uint32_t vertexInfoSize;
 	uint16_t numIndices;
 	uint32_t indicesBufferSize;
-	
-	uint32_t numVertsX;
-	uint32_t numVertsY;
-	
 	uint32_t numVerts;
-	
 	uint32_t numPrims;
+	
+	const uint32_t numVertsX = 10;
+	const uint32_t numVertsY = 10;
+	const uint32_t numComponents = 3;
+	
 };
 
 #endif
