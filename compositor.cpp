@@ -22,6 +22,8 @@
 #include <cstdio>
 #include <limits>
 
+#include "types.h"
+
 Compositor::Compositor(VkPhysicalDeviceMemoryProperties& memProps)
 : imageCount(2),
   drawIndex(0),
@@ -41,7 +43,8 @@ bool Compositor::Init(VkDevice& device,
 					  VkSurfaceKHR& surface,
 					  uint32_t queueFamilyId,
 					  uint32_t graphicsQueueIndex,
-					  uint32_t presentQueueIndex)
+					  uint32_t presentQueueIndex,
+					  uint32_t computeQueueIndex)
 {	
 	VkSurfaceTransformFlagBitsKHR transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 	
@@ -81,11 +84,11 @@ bool Compositor::Init(VkDevice& device,
 	
 	vkGetDeviceQueue(device, queueFamilyId, graphicsQueueIndex, &graphicsQueue);
 	vkGetDeviceQueue(device, queueFamilyId, presentQueueIndex, &presentQueue);
-
+	vkGetDeviceQueue(device, queueFamilyId, computeQueueIndex, &computeQueue);
+	
 	vkDeviceWaitIdle(device);
 	
 	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
-
 	vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images);
 	
 	for (uint32_t i = 0; i < imageCount; ++i)
@@ -112,8 +115,11 @@ bool Compositor::Init(VkDevice& device,
 			std::cout << "Image view creation failed" << std::endl;
 		}
 	}
-		
-	graphicsEngine = new Renderer(screenExtent, memProperties);
+	
+	//std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize)> callback;
+	//callback = std::bind(&Compositor::GetMemoryTypeIndex, this, std::placeholders::_1);
+	
+	graphicsEngine = new Renderer(screenExtent, grid, memProperties, GetMemoryTypeIndex);
 	
 	graphicsEngine->Init(device, surfaceFormat, imageViews, queueFamilyId);
 	
@@ -141,6 +147,14 @@ bool Compositor::Init(VkDevice& device,
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &waitSemaphore);
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &signalSemaphore);
 	
+	computer = new Compute(memProperties, GetMemoryTypeIndex);
+	
+	computer->Init(device, grid);
+	
+	computer->SetupQueue(device);
+	
+	//computeCommandBuffer = computer->SetupCommandBuffer(device, graphicsQueueIndex, computeQueueIndex);
+	
 	return true;
 }
 
@@ -150,6 +164,8 @@ bool Compositor::Destroy(VkDevice& device)
 	vkDestroySemaphore(device, signalSemaphore, nullptr);	
 	
 	graphicsEngine->Destroy(device);
+	
+	computer->Destroy(device);
 	
 	delete graphicsEngine;
 	
@@ -166,12 +182,12 @@ bool Compositor::Destroy(VkDevice& device)
 
 bool Compositor::Draw(VkDevice& device)
 {
-	VkCommandBuffer& transferCommandBuffer = graphicsEngine->TransferDynamicBuffers(device);
+	transferCommandBuffer = &graphicsEngine->TransferDynamicBuffers(device);
 	
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &transferCommandBuffer;
+	submitInfo.pCommandBuffers = transferCommandBuffer;
 
 	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(graphicsQueue);
@@ -218,4 +234,31 @@ bool Compositor::Draw(VkDevice& device)
 	drawIndex = (drawIndex + 1) % 2;
 	
 	return true;
+}
+
+uint32_t Compositor::GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize)
+{
+	VkMemoryRequirements memRequirements;
+	
+	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
+		
+	uint32_t memTypeIndex = InvalidIndex;
+	
+	for (uint32_t i = 0; i < props.memoryTypeCount; ++i)
+	{
+		if ((memRequirements.memoryTypeBits & (1 << i)) &&
+			(props.memoryTypes[i].propertyFlags & propFlags) == propFlags)
+		{
+			memTypeIndex = i;
+		}
+	}
+	
+	if (memTypeIndex == InvalidIndex)
+	{
+		throw std::runtime_error("Memory property combination not supported");
+	}
+	
+	allocSize = memRequirements.size;
+	
+	return memTypeIndex;
 }

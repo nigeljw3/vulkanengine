@@ -34,12 +34,15 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext.hpp> //"glm/gtx/string_cast.hpp"
 
-Renderer::Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProps)
+Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback)
 :	imageExtent(extent),
-	memProperties(memProps)
+	memProperties(memProps),
+	grid(gridDim)
 {	
-	numVerts = numVertsX * numVertsY;
-	numPrims = (numVertsX - 1) * (numVertsY - 1) * 2;
+	GetMemoryTypeIndexCallback = memTypeIndexCallback;
+
+	numVerts = grid.width * grid.height;
+	numPrims = (grid.width - 1) * (grid.height - 1) * 2;
 	vertexInfoSize = sizeof(float) * numComponents * numVerts * 2;
 	numIndices = numPrims * numComponents;
 	indicesBufferSize = sizeof(uint16_t) * numIndices;
@@ -71,15 +74,15 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	float delta = 0.5f;
 	uint32_t index = 0;
-	float xStartPos = - ((numVertsX - 1) * delta) / 2;
-	float yStartPos = - ((numVertsY - 1) * delta) / 2;
+	float xStartPos = - ((grid.width - 1) * delta) / 2;
+	float yStartPos = - ((grid.height - 1) * delta) / 2;
 	float xPos = xStartPos;
 	float yPos = yStartPos;
 	float zPos = 0.0f;
 	
-	for (uint32_t i = 0; i < numVertsY; ++i)
+	for (uint32_t i = 0; i < grid.height; ++i)
 	{
-		for (uint32_t j = 0; j < numVertsX; ++j)
+		for (uint32_t j = 0; j < grid.width; ++j)
 		{
 			vertexInfo[index] = xPos;
 			vertexInfo[index + 1] = zPos;
@@ -99,13 +102,13 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 		
 	index = 0;
 	
-	for (uint32_t i = 0; i < numVertsY - 1; ++i)
+	for (uint32_t i = 0; i < grid.height - 1; ++i)
 	{
-		for (uint32_t j = 0; j < numVertsX - 1; ++j)
+		for (uint32_t j = 0; j < grid.width - 1; ++j)
 		{			
-			indices[index] = i * numVertsX + j;
+			indices[index] = i * grid.width + j;
 			indices[index + 1] = indices[index] + 1;
-			indices[index + 2] = indices[index] + numVertsX;
+			indices[index + 2] = indices[index] + grid.width;
 			
 			indices[index + 3] = indices[index + 2];
 			indices[index + 4] = indices[index + 3] + 1;
@@ -574,33 +577,6 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	return true;
 }
 
-uint32_t Renderer::GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize)
-{
-	VkMemoryRequirements memRequirements;
-	
-	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-		
-	uint32_t memTypeIndex = InvalidIndex;
-	
-	for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
-	{
-		if ((memRequirements.memoryTypeBits & (1 << i)) &&
-			(memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-		{
-			memTypeIndex = i;
-		}
-	}
-	
-	if (memTypeIndex == InvalidIndex)
-	{
-		throw std::runtime_error("Memory property combination not supported");
-	}
-	
-	allocSize = memRequirements.size;
-	
-	return memTypeIndex;
-}
-
 bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 {
 	VkBufferCreateInfo bufferInfo = {};
@@ -619,7 +595,7 @@ bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	
 	uint32_t allocSize;
-	uint32_t bufferMemTypeIndex = GetMemoryTypeIndex(device, vertexBuffer, properties, allocSize);
+	uint32_t bufferMemTypeIndex = GetMemoryTypeIndexCallback(device, vertexBuffer, memProperties, properties, allocSize);
 	
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -785,7 +761,7 @@ bool Renderer::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
     }
 
 	uint32_t allocSize;
-	uint32_t memTypeIndex = GetMemoryTypeIndex(device, buffer, properties, allocSize);
+	uint32_t memTypeIndex = GetMemoryTypeIndexCallback(device, buffer, memProperties, properties, allocSize);
 	
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;

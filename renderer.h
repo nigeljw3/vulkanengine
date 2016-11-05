@@ -20,10 +20,12 @@
 
 #include <glm/glm.hpp>
 
+#include <functional>
+
 class Renderer
 {
 public:
-	Renderer(VkExtent2D& extent, VkPhysicalDeviceMemoryProperties& memProperties);
+	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProperties, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback);
 	~Renderer();
 	
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
@@ -50,7 +52,10 @@ private:
 	void SetupStaticTransfer(VkDevice &device);
 	
 	bool SetupShaderParameters(VkDevice& device);
-	uint32_t GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize);
+	
+	//auto GetGetMemoryTypeIndexCallback;
+	std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> GetMemoryTypeIndexCallback;
+	//uint32_t GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize);
 
 	VkExtent2D imageExtent;
 	VkPhysicalDeviceMemoryProperties memProperties;
@@ -105,10 +110,9 @@ private:
 	uint32_t numVerts;
 	uint32_t numPrims;
 	
-	const uint32_t numVertsX = 10;
-	const uint32_t numVertsY = 10;
 	const uint32_t numComponents = 3;
 	
+	const VkExtent3D grid;
 };
 
 #endif

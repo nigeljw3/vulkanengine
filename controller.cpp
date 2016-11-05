@@ -21,6 +21,7 @@
 #include <fstream>
 #include <cstdio>
 #include <limits>
+#include <stdexcept>
 
 const char* layers[] = {
 	"VK_LAYER_LUNARG_standard_validation",
@@ -205,6 +206,8 @@ bool Controller::Init()
 	free(devices);
 	free(availableLayers);
 	free(extensions);
+	
+	CheckFormatPropertyType(VK_FORMAT_R32_SFLOAT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
 	
 	return true;
 }
@@ -423,4 +426,21 @@ bool Controller::Destroy()
 	vkDestroyInstance(instance, nullptr);
 	
 	return true;
+}
+
+bool Controller::CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags)
+{
+	VkFormatProperties formatProps;
+	vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
+	
+	if (formatProps.optimalTilingFeatures & flags)
+	{
+		return true;
+	}
+	else
+	{
+		throw std::runtime_error("Format property not optimal");
+	}
+	
+	return false;
 }

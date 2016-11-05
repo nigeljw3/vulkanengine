@@ -43,6 +43,9 @@ public:
 	uint32_t GetQueueFamilyId() { return queueFamilyId; }
 	uint32_t GetGraphicsQueueIndex() { return graphicsQueueIndex; }
 	uint32_t GetPresentQueueIndex(){ return presentQueueIndex; }
+	uint32_t GetComputeQueueIndex(){ return computeQueueIndex; }
+	
+	bool CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags);
 	
 	Controller();
 	~Controller();
@@ -59,10 +62,11 @@ private:
 	VkPhysicalDeviceMemoryProperties memProperties;
 	float* queuePriorities;
 	
-	const uint32_t queueCount = 2;
+	const uint32_t queueCount = 3;
 	uint32_t queueFamilyId = InvalidIndex;
 	const uint32_t graphicsQueueIndex = 0;
 	const uint32_t presentQueueIndex = 1;
+	const uint32_t computeQueueIndex = 2;
 };
 
 #endif

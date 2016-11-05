@@ -61,7 +61,8 @@ int main()
 						  surface,
 						  devCtrl.GetQueueFamilyId(),
 						  devCtrl.GetGraphicsQueueIndex(),
-						  devCtrl.GetPresentQueueIndex());
+						  devCtrl.GetPresentQueueIndex(),
+						  devCtrl.GetComputeQueueIndex());
 
 			window.Loop(composer, devCtrl.GetDevice());
 		}

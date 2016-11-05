@@ -17,6 +17,7 @@
 #define compositor_h
 
 #include "renderer.h"
+#include "compute.h"
 
 #include <vulkan/vulkan.h>
 
@@ -30,7 +31,9 @@ public:
 			  VkSurfaceKHR& surface,
 			  uint32_t queueFamilyId,
 			  uint32_t graphicsQueueIndex,
-			  uint32_t presentQueueIndex);
+			  uint32_t presentQueueIndex,
+			  uint32_t computeQueueIndex);
+			  
 	void Loop();
 	bool Destroy(VkDevice& device);
 	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);
@@ -39,6 +42,8 @@ public:
 	
 	bool Draw(VkDevice& device);
 	
+	static uint32_t GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize);
+	
 private:
 	void PrintCapabilities();
 	
@@ -46,22 +51,32 @@ private:
 	uint32_t drawIndex;
 
 	Renderer* graphicsEngine;
+	Compute* computer;
+	
 	VkSurfaceCapabilitiesKHR capabilities;
 	VkImage* images;
 	VkSemaphore waitSemaphore;
 	VkSemaphore signalSemaphore;
 	VkSwapchainKHR swapChain;
 	VkImageView* imageViews;
+	
 	VkPhysicalDeviceMemoryProperties memProperties;
 	
 	VkQueue presentQueue;
 	VkQueue graphicsQueue;
+	VkQueue computeQueue;
 	
 	VkCommandBuffer* drawCommandBuffer;
 	VkCommandBuffer* transferCommandBuffer;
-			
+	VkCommandBuffer* computeCommandBuffer;
+	
 	const VkFormat surfaceFormat = VK_FORMAT_B8G8R8A8_UNORM;
 	const VkPresentModeKHR presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+	
+	VkImage textureImage;
+	VkImageMemoryBarrier barrier;
+	
+	const VkExtent3D grid { 10, 10, 1 };
 };
 
 #endif

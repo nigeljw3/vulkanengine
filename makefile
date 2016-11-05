@@ -20,7 +20,7 @@ INCLUDE = -I$(VULKAN_PATH)/include -I$(GLFW_PATH)/include -I$(GLM_PATH)
 LDFLAGS = -L$(VULKAN_PATH)/Bin32 -L$(GLFW_PATH)/lib-mingw
 LDLIBS = -lvulkan-1 -lglfw3 -lgdi32
 DEFINES = -DVK_USE_PLATFORM_WIN32_KHR
-OBJS = renderer.o system.o controller.o compositor.o
+OBJS = renderer.o system.o controller.o compositor.o compute.o
 
 .PHONY: clean test shaders
 
@@ -32,6 +32,9 @@ system.o: system.h system.cpp
 	
 renderer.o: renderer.h renderer.cpp
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c renderer.cpp -o $@
+	
+compute.o: compute.h compute.cpp
+	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c compute.cpp -o $@
 
 controller.o: controller.h controller.cpp
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c controller.cpp -o $@
