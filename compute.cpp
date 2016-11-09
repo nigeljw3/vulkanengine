@@ -34,7 +34,7 @@ void Compute::Init(VkDevice& device)
 		
 	//SetupImage(device, image, extent, format, imageMemory, properties, usage);
 	
-	VkDeviceSize size = sizeof(float);
+	VkDeviceSize size = sizeof(float)*2;
 	
 	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -68,9 +68,15 @@ void Compute::Destroy(VkDevice& device)
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 	
-	//vkDestroyPipeline(device, pipeline, nullptr);
+	vkDestroyPipeline(device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyShaderModule(device, shaderModule, nullptr);
+	
+	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+	
+	vkDestroyCommandPool(device, commandPool, nullptr);
+	
+	vkDestroyFence(device, fence, nullptr);
 }
 
 void Compute::SetupBuffers(VkDevice& device)
@@ -78,7 +84,7 @@ void Compute::SetupBuffers(VkDevice& device)
 	
 }
 
-void Compute::SetupQueue(VkDevice& device)
+void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 {
 	/*VkDeviceQueueCreateInfo queueCreateInfo = {};
 	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -244,7 +250,7 @@ void Compute::SetupQueue(VkDevice& device)
 		std::cout << "Pipeline layout creation failed" << std::cout;
 	}
 	
-	/*VkComputePipelineCreateInfo pipelineCreateInfo = {};
+	VkComputePipelineCreateInfo pipelineCreateInfo = {};
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 	pipelineCreateInfo.stage = shaderStageCreateInfo;
 	pipelineCreateInfo.layout = pipelineLayout;
@@ -253,7 +259,7 @@ void Compute::SetupQueue(VkDevice& device)
 		
 	VkCommandPoolCreateInfo cmdPoolInfo = {};
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	cmdPoolInfo.queueFamilyIndex = computeQueueFamilyId;
+	cmdPoolInfo.queueFamilyIndex = queueFamilyId;
 	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	result = vkCreateCommandPool(device, &cmdPoolInfo, nullptr, &commandPool);
 
@@ -265,15 +271,13 @@ void Compute::SetupQueue(VkDevice& device)
 
 	vkAllocateCommandBuffers(device, &cmdBufAllocInfo, &commandBuffer);
 
-	VkFence fence;
-	
-	VkFenceCreateInfo fenceCreateInfo;
+	VkFenceCreateInfo fenceCreateInfo = {};
 	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-	vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);*/
+	vkCreateFence(device, &fenceCreateInfo, nullptr, &fence);
 }
 
-VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t graphicsQueueFamilyId, uint32_t computeQueueFamilyId)
+VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t queueFamilyId)
 {
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -286,15 +290,15 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t graphics
 		throw std::runtime_error("Compute command buffer beign failed");
 	}
 	
-	/*memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memoryBarrier.buffer = storageBuffer;
-	memoryBarrier.size = storageBufferSize;
-	memoryBarrier.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-	memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	memoryBarrier.srcQueueFamilyIndex = graphicsQueueFamilyId;
-	memoryBarrier.dstQueueFamilyIndex = computeQueueFamilyId;
+	//memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	//memoryBarrier.buffer = storageBuffer;
+	//memoryBarrier.size = storageBufferSize;
+	//memoryBarrier.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	//memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	//memoryBarrier.srcQueueFamilyIndex = graphicsQueueFamilyId;
+	//memoryBarrier.dstQueueFamilyIndex = computeQueueFamilyId;
 	
-	vkCmdPipelineBarrier(commandBuffer,
+	/*vkCmdPipelineBarrier(commandBuffer,
 						 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 						 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 						 0,
@@ -306,12 +310,13 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t graphics
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0, 0);
 	vkCmdDispatch(commandBuffer, extent.width, extent.height, 1);
 
-	/*memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
 	memoryBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
 	memoryBarrier.buffer = storageBuffer;
 	memoryBarrier.size = storageBufferSize;
-	memoryBarrier.srcQueueFamilyIndex = computeQueueFamilyId;
-	memoryBarrier.dstQueueFamilyIndex = graphicsQueueFamilyId;
+	memoryBarrier.srcQueueFamilyIndex = queueFamilyId;
+	memoryBarrier.dstQueueFamilyIndex = queueFamilyId;
 	
 	vkCmdPipelineBarrier(commandBuffer,
 						 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -319,7 +324,7 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t graphics
 						 0,
 						 0, nullptr,
 						 1, &memoryBarrier,
-						 0, nullptr);*/
+						 0, nullptr);
 
 	vkEndCommandBuffer(commandBuffer);
 	

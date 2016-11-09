@@ -151,9 +151,9 @@ bool Compositor::Init(VkDevice& device,
 	
 	computer->Init(device);
 	
-	computer->SetupQueue(device);
+	computer->SetupQueue(device, queueFamilyId);
 	
-	//computeCommandBuffer = computer->SetupCommandBuffer(device, graphicsQueueIndex, computeQueueIndex);
+	computeCommandBuffer = computer->SetupCommandBuffer(device, queueFamilyId);
 	
 	return true;
 }
@@ -184,9 +184,17 @@ bool Compositor::Destroy(VkDevice& device)
 
 bool Compositor::Draw(VkDevice& device)
 {
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = computeCommandBuffer;
+
+	vkQueueSubmit(computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(computeQueue);
+	
 	transferCommandBuffer = &graphicsEngine->TransferDynamicBuffers(device);
 	
-	VkSubmitInfo submitInfo = {};
+	submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = transferCommandBuffer;

@@ -15,14 +15,14 @@ public:
 	
 	void Init(VkDevice& device);
 	void Destroy(VkDevice& device);
-	void SetupQueue(VkDevice& device);
-	VkCommandBuffer* SetupCommandBuffer(VkDevice& device, uint32_t graphicsQueueFamilyId, uint32_t computeQueueFamilyId);
+	void SetupQueue(VkDevice& device, uint32_t queueFamilyId);
+	VkCommandBuffer* SetupCommandBuffer(VkDevice& device, uint32_t queueFamilyId);
 	
 private:
 	//uint32_t GetMemoryTypeIndex(VkDevice& device, VkImage& image, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize);
 
 	void SetupBuffers(VkDevice& device);
-	void SetupCommandBuffer();
+	//void SetupCommandBuffer();
 	//std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> GetMemoryTypeIndexCallback;
 	
 	VkShaderModule shaderModule;
@@ -30,7 +30,7 @@ private:
 	VkPipelineLayout pipelineLayout;
 	
 	VkCommandBuffer commandBuffer;
-	VkBufferMemoryBarrier memoryBarrier;
+	VkBufferMemoryBarrier memoryBarrier = {};
 	//VkDeviceMemory memory;
 	
 	//VkImage image;
@@ -55,6 +55,8 @@ private:
 	
 	uint32_t uniformBufferSize;
 	uint32_t storageBufferSize;
+	
+	VkFence fence;
 };
 
 #endif
