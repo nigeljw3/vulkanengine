@@ -1,46 +1,60 @@
 #ifndef compute_h
 #define compute_h
 
+#include "commands.h"
+
 #include <vulkan/vulkan.h>
 #include <functional>
 
-class Compute
+class Compute : Commands
 {
 public:
-	Compute(VkPhysicalDeviceMemoryProperties& props, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback);
+	//Compute(VkExtent3D extent, VkPhysicalDeviceMemoryProperties& props, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback);
+	Compute(VkExtent3D extent, VkPhysicalDeviceMemoryProperties& props);
 	~Compute();
 	
-	void Init(VkDevice& device, VkExtent3D extent);
+	void Init(VkDevice& device);
 	void Destroy(VkDevice& device);
 	void SetupQueue(VkDevice& device);
 	VkCommandBuffer* SetupCommandBuffer(VkDevice& device, uint32_t graphicsQueueFamilyId, uint32_t computeQueueFamilyId);
 	
 private:
-	uint32_t GetMemoryTypeIndex(VkDevice& device, VkImage& image, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize);
+	//uint32_t GetMemoryTypeIndex(VkDevice& device, VkImage& image, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize);
 
+	void SetupBuffers(VkDevice& device);
 	void SetupCommandBuffer();
-	std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> GetMemoryTypeIndexCallback;
-		
+	//std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> GetMemoryTypeIndexCallback;
+	
+	VkShaderModule shaderModule;
 	VkPipeline pipeline;
 	VkPipelineLayout pipelineLayout;
 	
 	VkCommandBuffer commandBuffer;
 	VkBufferMemoryBarrier memoryBarrier;
-	VkDeviceMemory memory;
+	//VkDeviceMemory memory;
 	
+	//VkImage image;
 	VkBuffer uniformBuffer;
 	VkBuffer storageBuffer;
 	
-	VkImage image;
+	VkDeviceMemory uniformBufferMemory;
+	VkDeviceMemory storageBufferMemory;
+	//VkDeviceMemory imageMemory;
+	
 	VkCommandPool commandPool;
 	
 	VkExtent3D extent;
 	
-	VkDescriptorSet descriptorSets[2];
+	VkDescriptorSet descriptorSet;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorPool descriptorPool;
 	
-	uint32_t size;
+	//uint32_t size;
 	
-	VkPhysicalDeviceMemoryProperties memProperties;
+	//VkPhysicalDeviceMemoryProperties memProperties;
+	
+	uint32_t uniformBufferSize;
+	uint32_t storageBufferSize;
 };
 
 #endif

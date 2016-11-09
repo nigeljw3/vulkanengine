@@ -34,12 +34,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext.hpp> //"glm/gtx/string_cast.hpp"
 
-Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback)
-:	imageExtent(extent),
-	memProperties(memProps),
+//Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback)
+Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps)
+:	Commands(memProps),
+	imageExtent(extent),
 	grid(gridDim)
 {	
-	GetMemoryTypeIndexCallback = memTypeIndexCallback;
+	//GetMemoryTypeIndexCallback = memTypeIndexCallback;
 
 	numVerts = grid.width * grid.height;
 	numPrims = (grid.width - 1) * (grid.height - 1) * 2;
@@ -577,7 +578,7 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	return true;
 }
 
-bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
+/*bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 {
 	VkBufferCreateInfo bufferInfo = {};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -593,9 +594,12 @@ bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
     }
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	VkMemoryRequirements memRequirements;
+	
+	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
 	
 	uint32_t allocSize;
-	uint32_t bufferMemTypeIndex = GetMemoryTypeIndexCallback(device, vertexBuffer, memProperties, properties, allocSize);
+	uint32_t bufferMemTypeIndex = GetMemoryTypeIndex(device, vertexBuffer, memProperties, properties, allocSize);
 	
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -621,7 +625,7 @@ bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
 	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
 	
 	return true;
-}
+}*/
 
 bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
 {
@@ -742,41 +746,6 @@ bool Renderer::SetupIndexBuffer(VkDevice& device)
     memcpy(data, indices, (size_t) size);
     vkUnmapMemory(device, indexTransferBufferMemory);
 
-	return true;
-}
-
-bool Renderer::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage)
-{
-	VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
-	
-	if (result != VK_SUCCESS)
-	{
-        throw std::runtime_error("Transfer buffer creation failed");
-    }
-
-	uint32_t allocSize;
-	uint32_t memTypeIndex = GetMemoryTypeIndexCallback(device, buffer, memProperties, properties, allocSize);
-	
-    VkMemoryAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = allocSize;
-    allocInfo.memoryTypeIndex = memTypeIndex;
-	
-    result = vkAllocateMemory(device, &allocInfo, nullptr, &memory);
-	
-	if (result != VK_SUCCESS)
-	{
-        throw std::runtime_error("Buffer allocation failed");
-    }
-
-    vkBindBufferMemory(device, buffer, memory, 0);
-	
 	return true;
 }
 

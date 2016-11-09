@@ -20,7 +20,7 @@ INCLUDE = -I$(VULKAN_PATH)/include -I$(GLFW_PATH)/include -I$(GLM_PATH)
 LDFLAGS = -L$(VULKAN_PATH)/Bin32 -L$(GLFW_PATH)/lib-mingw
 LDLIBS = -lvulkan-1 -lglfw3 -lgdi32
 DEFINES = -DVK_USE_PLATFORM_WIN32_KHR
-OBJS = renderer.o system.o controller.o compositor.o compute.o
+OBJS = commands.o renderer.o system.o controller.o compositor.o compute.o
 
 .PHONY: clean test shaders
 
@@ -29,8 +29,11 @@ vulkan: main.cpp $(OBJS)
 
 system.o: system.h system.cpp
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c system.cpp -o $@	
+
+commands.o: commands.h commands.cpp
+	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c commands.cpp -o $@
 	
-renderer.o: renderer.h renderer.cpp
+renderer.o: renderer.h renderer.cpp commands.o
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c renderer.cpp -o $@
 	
 compute.o: compute.h compute.cpp
@@ -48,6 +51,7 @@ test: vulkan
 shaders:
 	$(VULKAN_PATH)/Bin32/glslangValidator.exe -V shader.vert
 	$(VULKAN_PATH)/Bin32/glslangValidator.exe -V shader.frag
-	
+	$(VULKAN_PATH)/Bin32/glslangValidator.exe -V shader.comp
+
 clean:
 	rm *.exe *.o

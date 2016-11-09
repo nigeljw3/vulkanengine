@@ -119,7 +119,7 @@ bool Compositor::Init(VkDevice& device,
 	//std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize)> callback;
 	//callback = std::bind(&Compositor::GetMemoryTypeIndex, this, std::placeholders::_1);
 	
-	graphicsEngine = new Renderer(screenExtent, grid, memProperties, GetMemoryTypeIndex);
+	graphicsEngine = new Renderer(screenExtent, grid, memProperties);
 	
 	graphicsEngine->Init(device, surfaceFormat, imageViews, queueFamilyId);
 	
@@ -147,9 +147,9 @@ bool Compositor::Init(VkDevice& device,
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &waitSemaphore);
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &signalSemaphore);
 	
-	computer = new Compute(memProperties, GetMemoryTypeIndex);
+	computer = new Compute(grid, memProperties);
 	
-	computer->Init(device, grid);
+	computer->Init(device);
 	
 	computer->SetupQueue(device);
 	
@@ -168,6 +168,8 @@ bool Compositor::Destroy(VkDevice& device)
 	computer->Destroy(device);
 	
 	delete graphicsEngine;
+	
+	delete computer;
 	
 	for(uint32_t i = 0; i < imageCount; ++i)
 	{

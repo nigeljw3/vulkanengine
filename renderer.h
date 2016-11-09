@@ -22,10 +22,14 @@
 
 #include <functional>
 
-class Renderer
+#include "commands.h"
+
+class Renderer : Commands
 {
 public:
-	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProperties, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback);
+	//Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProperties, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback);
+	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps);
+	
 	~Renderer();
 	
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
@@ -43,7 +47,6 @@ public:
 	void Draw(VkDevice &device);
 	
 private:
-	bool SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage);
 	bool SetupIndexBuffer(VkDevice& device);
 	bool SetupClientSideVertexBuffer(VkDevice& device);
 	bool SetupServerSideVertexBuffer(VkDevice& device);
@@ -54,11 +57,11 @@ private:
 	bool SetupShaderParameters(VkDevice& device);
 	
 	//auto GetGetMemoryTypeIndexCallback;
-	std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> GetMemoryTypeIndexCallback;
+	//std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> GetMemoryTypeIndexCallback;
 	//uint32_t GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize);
 
 	VkExtent2D imageExtent;
-	VkPhysicalDeviceMemoryProperties memProperties;
+	//VkPhysicalDeviceMemoryProperties memProperties;
 	VkShaderModule vertexShaderModule;
 	VkShaderModule fragmentShaderModule;
 	VkPipelineLayout pipelineLayout;
