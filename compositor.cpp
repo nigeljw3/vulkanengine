@@ -127,7 +127,15 @@ bool Compositor::Init(VkDevice& device,
 	
 	VkCommandBuffer& dynamicTransferCommandBuffer = graphicsEngine->TransferDynamicBuffers(device);
 	
-	graphicsEngine->ConstructFrames();
+	computer = new Compute(grid, memProperties);
+	
+	computer->Init(device);
+	
+	computer->SetupQueue(device, queueFamilyId);
+	
+	computeCommandBuffer = computer->SetupCommandBuffer(device, queueFamilyId);	
+	
+	graphicsEngine->ConstructFrames(computer->GetStorageBuffer());
 	
 	VkCommandBuffer transferCommandBuffers[] = { staticTransferCommandBuffer, dynamicTransferCommandBuffer };
 	
@@ -146,14 +154,6 @@ bool Compositor::Init(VkDevice& device,
 	
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &waitSemaphore);
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &signalSemaphore);
-	
-	computer = new Compute(grid, memProperties);
-	
-	computer->Init(device);
-	
-	computer->SetupQueue(device, queueFamilyId);
-	
-	computeCommandBuffer = computer->SetupCommandBuffer(device, queueFamilyId);
 	
 	return true;
 }
@@ -182,6 +182,8 @@ bool Compositor::Destroy(VkDevice& device)
 	return true;
 }
 
+bool once = true;
+
 bool Compositor::Draw(VkDevice& device)
 {
 	VkSubmitInfo submitInfo = {};
@@ -191,6 +193,12 @@ bool Compositor::Draw(VkDevice& device)
 
 	vkQueueSubmit(computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(computeQueue);
+	
+	if(once)
+	{
+		computer->PrintResults(device);
+		once = false;
+	}
 	
 	transferCommandBuffer = &graphicsEngine->TransferDynamicBuffers(device);
 	

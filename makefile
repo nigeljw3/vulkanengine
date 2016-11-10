@@ -33,16 +33,16 @@ system.o: system.h system.cpp
 commands.o: commands.h commands.cpp
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c commands.cpp -o $@
 	
-renderer.o: renderer.h renderer.cpp commands.o
+renderer.o: renderer.h renderer.cpp commands.h
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c renderer.cpp -o $@
 	
-compute.o: compute.h compute.cpp
+compute.o: compute.h compute.cpp commands.h
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c compute.cpp -o $@
 
 controller.o: controller.h controller.cpp
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c controller.cpp -o $@
 	
-compositor.o: compositor.h compositor.cpp
+compositor.o: compositor.h compositor.cpp renderer.h compute.h
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c compositor.cpp -o $@
 	
 test: vulkan

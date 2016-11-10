@@ -53,6 +53,7 @@ Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDevi
 	framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
 	drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
 	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
+	bindingDescriptions = static_cast<VkVertexInputBindingDescription*>(malloc(sizeof(VkVertexInputBindingDescription)*numBindDesc));
 }
 
 Renderer::~Renderer()
@@ -62,6 +63,7 @@ Renderer::~Renderer()
 	free(framebuffers);
 	free(drawCommandBuffers);
 	free(attributeDescriptions);
+	free(bindingDescriptions);
 }
 
 bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
@@ -183,9 +185,9 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexBindingDescriptionCount = 2;
 	vertexInputInfo.vertexAttributeDescriptionCount = numAttrDesc;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions;
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
 		
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
@@ -447,7 +449,7 @@ bool Renderer::Destroy(VkDevice& device)
 	return true;
 }
 
-void Renderer::ConstructFrames()
+void Renderer::ConstructFrames(VkBuffer& heightBuffer)
 {
 	bool result = false;
 	
@@ -469,6 +471,8 @@ void Renderer::ConstructFrames()
 	
 	VkDeviceSize offsets[] = {0};
 	
+	VkBuffer buffers[] = { vertexBuffer, heightBuffer };
+	
 	assert(numDrawCmdBuffers == numFBOs);
 	
 	for (uint32_t i = 0; i < numDrawCmdBuffers; ++i)
@@ -479,7 +483,7 @@ void Renderer::ConstructFrames()
 		vkCmdBeginRenderPass(drawCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindDescriptorSets(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 		vkCmdBindPipeline(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 1, &vertexBuffer, offsets);
+		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 2, buffers, offsets);
 		vkCmdBindIndexBuffer(drawCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed(drawCommandBuffers[i], numIndices, 1, 0, 0, 0);
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
@@ -495,9 +499,13 @@ void Renderer::ConstructFrames()
 
 bool Renderer::SetupShaderParameters(VkDevice& device)
 {
-	bindingDescription.binding = 0;
-	bindingDescription.stride = sizeof(float[3]) * 2;
-	bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	bindingDescriptions[0].binding = 0;
+	bindingDescriptions[0].stride = sizeof(float[3]) * 2;
+	bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	
+	bindingDescriptions[1].binding = 1;
+	bindingDescriptions[1].stride = sizeof(float);
+	bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
@@ -508,6 +516,11 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	attributeDescriptions[1].location = 1;
 	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescriptions[1].offset = sizeof(float[3]);
+	
+	attributeDescriptions[2].binding = 1;
+	attributeDescriptions[2].location = 2;
+	attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
+	attributeDescriptions[2].offset = 0;
 
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

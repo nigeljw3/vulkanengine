@@ -33,7 +33,7 @@ public:
 	~Renderer();
 	
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
-	void ConstructFrames();
+	void ConstructFrames(VkBuffer& heightBuffer);
 	
 	VkCommandBuffer* GetFrame(uint32_t index)
 	{
@@ -87,9 +87,11 @@ private:
 	VkDeviceMemory uniformTransferBufferMemory;
 	VkBuffer uniformBuffer;
 	VkDeviceMemory uniformBufferMemory;
+	
+	VkBuffer* heightBuffer;
 
 	VkVertexInputAttributeDescription* attributeDescriptions;
-	VkVertexInputBindingDescription bindingDescription = {};
+	VkVertexInputBindingDescription* bindingDescriptions = {};
 	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
@@ -97,7 +99,8 @@ private:
 	
 	const uint32_t numFBOs = 2;
 	const uint32_t numDrawCmdBuffers = 2;
-	const uint32_t numAttrDesc = 2;
+	const uint32_t numAttrDesc = 3;
+	const uint32_t numBindDesc = 2;
 	const uint32_t numVertices = 3;
 	
 	glm::mat4 mvp;

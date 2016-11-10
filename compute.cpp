@@ -1,3 +1,18 @@
+/**
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "compute.h"
 
 #include <stdexcept>
@@ -25,7 +40,7 @@ void Compute::Init(VkDevice& device)
 {	
 	//size = sizeof(float)*extent.width*extent.height;
 	
-	VkFormat format = VK_FORMAT_R32_SFLOAT;
+	//VkFormat format = VK_FORMAT_R32_SFLOAT;
 	
 	//assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
 	
@@ -43,7 +58,8 @@ void Compute::Init(VkDevice& device)
 	
 	size = extent.width*extent.height*sizeof(float);
 	
-	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	//properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
 	SetupBuffer(device, storageBuffer, storageBufferMemory, size, properties, usage);
@@ -79,23 +95,13 @@ void Compute::Destroy(VkDevice& device)
 	vkDestroyFence(device, fence, nullptr);
 }
 
-void Compute::SetupBuffers(VkDevice& device)
+/*void Compute::SetupBuffers(VkDevice& device)
 {
 	
-}
+}*/
 
 void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
-{
-	/*VkDeviceQueueCreateInfo queueCreateInfo = {};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.pNext = NULL;
-	queueCreateInfo.queueFamilyIndex = queueIndex;
-	queueCreateInfo.queueCount = 1;
-	
-	vkGetDeviceQueue(device, queueFamilyId, 0, &queue);*/
-	
-	//uint32_t computeQueueFamilyId = 0;
-	
+{	
 	uint32_t uniformIndex = 0;
 	uint32_t storageIndex = 1;
 	
@@ -124,29 +130,6 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	{
 		throw std::runtime_error("Descriptor set layout creation failed");
 	}
-	
-	/*VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.bindingCount = 1;
-	layoutCreateInfo.pBindings = &layoutBindings[uniformIndex];
-
-	VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &descriptorSetLayouts[uniformIndex]);
-	
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Descriptor set layout creation failed");
-	}
-	
-	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.bindingCount = 1;
-	layoutCreateInfo.pBindings = &layoutBindings[storageIndex];
-
-	result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &descriptorSetLayouts[storageIndex]);
-	
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Descriptor set layout creation failed");
-	}*/
 	
 	VkDescriptorPoolSize poolSizes[2];
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -290,21 +273,21 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t queueFam
 		throw std::runtime_error("Compute command buffer beign failed");
 	}
 	
-	//memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	//memoryBarrier.buffer = storageBuffer;
-	//memoryBarrier.size = storageBufferSize;
-	//memoryBarrier.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-	//memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	//memoryBarrier.srcQueueFamilyIndex = graphicsQueueFamilyId;
-	//memoryBarrier.dstQueueFamilyIndex = computeQueueFamilyId;
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	memoryBarrier.buffer = storageBuffer;
+	memoryBarrier.size = storageBufferSize;
+	memoryBarrier.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarrier.srcQueueFamilyIndex = queueFamilyId;
+	memoryBarrier.dstQueueFamilyIndex = queueFamilyId;
 	
-	/*vkCmdPipelineBarrier(commandBuffer,
+	vkCmdPipelineBarrier(commandBuffer,
 						 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 						 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 						 0,
 					     0, nullptr,
 						 1, &memoryBarrier,
-						 0, nullptr);*/
+						 0, nullptr);
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0, 0);
@@ -331,29 +314,21 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t queueFam
 	return &commandBuffer;
 }
 
-/*uint32_t Compute::GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize)
+void Compute::PrintResults(VkDevice& device)
 {
-	VkMemoryRequirements memRequirements;
+	void* data;
+	uint32_t size = extent.width*extent.height*sizeof(float);
+    vkMapMemory(device, storageBufferMemory, 0, size, 0, &data);
 	
-	vkGetImageMemoryRequirements(device, buffer, &memRequirements);
-		
-	uint32_t memTypeIndex = InvalidIndex;
-	
-	for (uint32_t i = 0; i < props.memoryTypeCount; ++i)
+	for(uint32_t i = 0; i < extent.width; ++i)
 	{
-		if ((memRequirements.memoryTypeBits & (1 << i)) &&
-			(props.memoryTypes[i].propertyFlags & propFlags) == propFlags)
+		for(uint32_t j = 0; j < extent.height; ++j)
 		{
-			memTypeIndex = i;
+			std::cout << static_cast<float*>(data)[i*j] << ", ";
 		}
+		
+		std::cout << std::endl;
 	}
 	
-	if (memTypeIndex == InvalidIndex)
-	{
-		throw std::runtime_error("Memory property combination not supported");
-	}
-	
-	allocSize = memRequirements.size;
-	
-	return memTypeIndex;
-}*/
+    vkUnmapMemory(device, storageBufferMemory);
+}
