@@ -20,6 +20,7 @@
 
 #include <vulkan/vulkan.h>
 #include <functional>
+#include <chrono>
 
 class Compute : Commands
 {
@@ -37,7 +38,11 @@ public:
 	
 	void PrintResults(VkDevice& device);
 	
+	void UpdateWave(VkDevice& device);
+	
 private:
+	const uint32_t numWaveComponents = 5;
+
 	//uint32_t GetMemoryTypeIndex(VkDevice& device, VkImage& image, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize);
 
 	//void SetupBuffers(VkDevice& device);
@@ -76,6 +81,8 @@ private:
 	uint32_t storageBufferSize;
 	
 	VkFence fence;
+	
+	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
 };
 
 #endif

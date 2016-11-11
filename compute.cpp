@@ -25,10 +25,13 @@
 Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props)
 : Commands(props),
   extent(inputExtent),
-  uniformBufferSize(sizeof(float)),
-  storageBufferSize(sizeof(float) * inputExtent.width * inputExtent.height)
+  uniformBufferSize(sizeof(float) * numWaveComponents),
+  storageBufferSize(sizeof(float) * inputExtent.width * inputExtent.height),	
+  startTime(std::chrono::high_resolution_clock::now())
 {
 	//GetMemoryTypeIndexCallback = memTypeIndexCallback;
+	
+	std::cout << "ubo size: " << uniformBufferSize << std::endl;
 }
 
 Compute::~Compute()
@@ -38,8 +41,6 @@ Compute::~Compute()
 
 void Compute::Init(VkDevice& device)
 {	
-	//size = sizeof(float)*extent.width*extent.height;
-	
 	//VkFormat format = VK_FORMAT_R32_SFLOAT;
 	
 	//assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
@@ -49,20 +50,16 @@ void Compute::Init(VkDevice& device)
 		
 	//SetupImage(device, image, extent, format, imageMemory, properties, usage);
 	
-	VkDeviceSize size = sizeof(float)*2;
-	
 	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	
-    SetupBuffer(device, uniformBuffer, uniformBufferMemory, size, properties, usage);
-	
-	size = extent.width*extent.height*sizeof(float);
+    SetupBuffer(device, uniformBuffer, uniformBufferMemory, uniformBufferSize, properties, usage);
 	
 	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	//properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
-	SetupBuffer(device, storageBuffer, storageBufferMemory, size, properties, usage);
+	SetupBuffer(device, storageBuffer, storageBufferMemory, storageBufferSize, properties, usage);
 }
 
 void Compute::Destroy(VkDevice& device)
@@ -314,17 +311,42 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t queueFam
 	return &commandBuffer;
 }
 
+void Compute::UpdateWave(VkDevice& device)
+{
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+	
+	float pi = 3.14;
+	float lambda = 4.0;
+	float k = 2.0*pi/lambda;
+	float omega = 2.0;
+	float dx = 0.5;
+	float amplitude = 0.5;
+	
+	void* data;
+    vkMapMemory(device, uniformBufferMemory, 0, uniformBufferSize, 0, &data);
+	
+	float* wave = static_cast<float*>(data);
+	
+	wave[0] = time;
+	wave[1] = dx;
+	wave[2] = k;
+	wave[3] = omega;
+	wave[4] = amplitude;
+	
+	vkUnmapMemory(device, uniformBufferMemory);
+}
+
 void Compute::PrintResults(VkDevice& device)
 {
 	void* data;
-	uint32_t size = extent.width*extent.height*sizeof(float);
-    vkMapMemory(device, storageBufferMemory, 0, size, 0, &data);
+    vkMapMemory(device, storageBufferMemory, 0, storageBufferSize, 0, &data);
 	
 	for(uint32_t i = 0; i < extent.width; ++i)
 	{
 		for(uint32_t j = 0; j < extent.height; ++j)
 		{
-			std::cout << static_cast<float*>(data)[i*j] << ", ";
+			std::cout << static_cast<float*>(data)[i*extent.width + j] << ", ";
 		}
 		
 		std::cout << std::endl;

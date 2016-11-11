@@ -186,6 +186,8 @@ bool once = true;
 
 bool Compositor::Draw(VkDevice& device)
 {
+	computer->UpdateWave(device);
+	
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
