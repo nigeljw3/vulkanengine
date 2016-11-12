@@ -180,11 +180,15 @@ bool Controller::Init()
 	
 	bool foundDiscreteGPU = false;
 	
+	std::cout << "Device count: " << deviceCount << std::endl;
+	
 	for (uint32_t i = 0; i < deviceCount; ++i)
 	{
 		vkGetPhysicalDeviceProperties(devices[i], &deviceProperties);
 		
-		std::cout << deviceProperties.deviceType << std::endl;
+		std::cout << "Device type: " << deviceProperties.deviceType << std::endl;
+		
+		std::cout << "Storage buffer offset alignment: " << deviceProperties.limits.minStorageBufferOffsetAlignment << std::endl;
 		
 		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		{

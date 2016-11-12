@@ -32,9 +32,9 @@ layout(std430, binding = 1) buffer Height
    float height[];
 };
 
-layout(std430, binding = 2) buffer Normal 
+layout(std140, binding = 2) buffer Normal 
 {
-   vec3 normal[];
+   vec4 normal[];
 };
 
 layout (local_size_x = 10, local_size_y = 10) in;
@@ -63,4 +63,5 @@ void main()
 	normal[index].x = -ubo.amplitude*cos(kx - ubo.omega*ubo.time);
 	normal[index].y = 1.0;
 	normal[index].z = 0.0;
+	normal[index].w = 1.0;
 }

@@ -18,7 +18,7 @@
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
-layout(location = 3) in vec3 inNormal;
+layout(location = 3) in vec4 inNormal;
 layout(location = 2) in float inHeight;
 
 layout(binding = 0) uniform UBO {
@@ -48,7 +48,7 @@ void main() {
 	outSpecularConst = 0.25;
 	outSpecularLight = vec4(0.5, 0.5, 0.5, 1.0); 
 
-	outNormal = normalize(inNormal);
+	outNormal = normalize(inNormal.xyz);
 	mat4 modelView = ubo.view * ubo.model;
 	vec4 pos = modelView * vec4(inPosition.x, inHeight, inPosition.z, 1.0);	
 	outEyePos = vec3(modelView * pos);

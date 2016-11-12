@@ -27,7 +27,7 @@ Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props
   extent(inputExtent),
   uniformBufferSize(sizeof(float) * numWaveComponents),
   storageBufferSize(sizeof(float) * inputExtent.width * inputExtent.height),
-  normalBufferSize(sizeof(float[3]) * inputExtent.width * inputExtent.height),  
+  normalBufferSize(sizeof(float[4]) * inputExtent.width * inputExtent.height),  
   startTime(std::chrono::high_resolution_clock::now())
 {
 	//GetMemoryTypeIndexCallback = memTypeIndexCallback;
@@ -61,7 +61,7 @@ void Compute::Init(VkDevice& device)
 
 	SetupBuffer(device, storageBuffer, storageBufferMemory, storageBufferSize, properties, usage);
 	
-	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
 	SetupBuffer(device, normalBuffer, normalBufferMemory, normalBufferSize, properties, usage);
@@ -385,17 +385,25 @@ void Compute::UpdateWave(VkDevice& device)
 void Compute::PrintResults(VkDevice& device)
 {
 	void* data;
-    vkMapMemory(device, storageBufferMemory, 0, storageBufferSize, 0, &data);
+    //vkMapMemory(device, storageBufferMemory, 0, storageBufferSize, 0, &data);
+	
+	vkMapMemory(device, normalBufferMemory, 0, normalBufferSize, 0, &data);
+	
+	float* mem = static_cast<float*>(data);
 	
 	for(uint32_t i = 0; i < extent.width; ++i)
 	{
 		for(uint32_t j = 0; j < extent.height; ++j)
 		{
-			std::cout << static_cast<float*>(data)[i*extent.width + j] << ", ";
+			//std::cout << static_cast<float*>(data)[i*extent.width + j] << ", ";
+			std::cout << "{ " << mem[i*extent.width + j*4] << ", "
+							  << mem[i*extent.width + j*4 + 1] << ", "
+							  << mem[i*extent.width + j*4 + 2] << ", "
+							  << mem[i*extent.width + j*4 + 3] << " }";
 		}
 		
 		std::cout << std::endl;
 	}
 	
-    vkUnmapMemory(device, storageBufferMemory);
+    vkUnmapMemory(device, normalBufferMemory);
 }

@@ -498,7 +498,7 @@ void Renderer::ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer)
 		vkCmdBeginRenderPass(drawCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindDescriptorSets(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 		vkCmdBindPipeline(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 3, buffers, offsets);
+		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, numBindDesc, buffers, offsets);
 		vkCmdBindIndexBuffer(drawCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed(drawCommandBuffers[i], numIndices, 1, 0, 0, 0);
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
@@ -523,7 +523,7 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 	bindingDescriptions[2].binding = 2;
-	bindingDescriptions[2].stride = sizeof(float[3]);
+	bindingDescriptions[2].stride = sizeof(float[4]);
 	bindingDescriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	
 	attributeDescriptions[0].binding = 0;
