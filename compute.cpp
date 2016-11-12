@@ -26,7 +26,8 @@ Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props
 : Commands(props),
   extent(inputExtent),
   uniformBufferSize(sizeof(float) * numWaveComponents),
-  storageBufferSize(sizeof(float) * inputExtent.width * inputExtent.height),	
+  storageBufferSize(sizeof(float) * inputExtent.width * inputExtent.height),
+  normalBufferSize(sizeof(float[3]) * inputExtent.width * inputExtent.height),  
   startTime(std::chrono::high_resolution_clock::now())
 {
 	//GetMemoryTypeIndexCallback = memTypeIndexCallback;
@@ -56,9 +57,14 @@ void Compute::Init(VkDevice& device)
     SetupBuffer(device, uniformBuffer, uniformBufferMemory, uniformBufferSize, properties, usage);
 	
 	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
 	SetupBuffer(device, storageBuffer, storageBufferMemory, storageBufferSize, properties, usage);
+	
+	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+	SetupBuffer(device, normalBuffer, normalBufferMemory, normalBufferSize, properties, usage);
 }
 
 void Compute::Destroy(VkDevice& device)
@@ -76,6 +82,9 @@ void Compute::Destroy(VkDevice& device)
 
 	vkFreeMemory(device, storageBufferMemory, nullptr);
 	vkDestroyBuffer(device, storageBuffer, nullptr);
+	
+	vkFreeMemory(device, normalBufferMemory, nullptr);
+	vkDestroyBuffer(device, normalBuffer, nullptr);
 	
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
@@ -100,8 +109,11 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 {	
 	uint32_t uniformIndex = 0;
 	uint32_t storageIndex = 1;
+	uint32_t normalIndex = 2;
 	
-	VkDescriptorSetLayoutBinding layoutBindings[2];
+	uint32_t numBindings = 3;
+	
+	VkDescriptorSetLayoutBinding layoutBindings[] = {{},{},{}};
 
 	layoutBindings[uniformIndex].binding = 0;
 	layoutBindings[uniformIndex].descriptorCount = 1;
@@ -115,9 +127,15 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	layoutBindings[storageIndex].pImmutableSamplers = nullptr;
 	layoutBindings[storageIndex].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 	
+	layoutBindings[normalIndex].binding = 2;
+	layoutBindings[normalIndex].descriptorCount = 1;
+	layoutBindings[normalIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	layoutBindings[normalIndex].pImmutableSamplers = nullptr;
+	layoutBindings[normalIndex].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.bindingCount = 2;
+	layoutCreateInfo.bindingCount = numBindings;
 	layoutCreateInfo.pBindings = layoutBindings;
 
 	VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &descriptorSetLayout);
@@ -132,7 +150,7 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	poolSizes[0].descriptorCount = 1;
 	
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSizes[1].descriptorCount = 1;
+	poolSizes[1].descriptorCount = 2;
 	
 	VkDescriptorPoolCreateInfo poolCreateInfo = {};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -160,7 +178,7 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 		throw std::runtime_error("Descriptor set allocation failed");
 	}
 	
-	VkDescriptorBufferInfo bufferInfo[2];
+	VkDescriptorBufferInfo bufferInfo[] = { {}, {}, {} };;
 	bufferInfo[uniformIndex].buffer = uniformBuffer;
 	bufferInfo[uniformIndex].offset = 0;
 	bufferInfo[uniformIndex].range = uniformBufferSize;
@@ -169,7 +187,11 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	bufferInfo[storageIndex].offset = 0;
 	bufferInfo[storageIndex].range = storageBufferSize;
 	
-	VkWriteDescriptorSet descriptorWrites[] = { {}, {} };
+	bufferInfo[normalIndex].buffer = normalBuffer;
+	bufferInfo[normalIndex].offset = 0;
+	bufferInfo[normalIndex].range = normalBufferSize;
+	
+	VkWriteDescriptorSet descriptorWrites[] = { {}, {}, {} };
 	descriptorWrites[uniformIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptorWrites[uniformIndex].dstSet = descriptorSet;
 	descriptorWrites[uniformIndex].dstBinding = 0;
@@ -186,7 +208,15 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	descriptorWrites[storageIndex].descriptorCount = 1;
 	descriptorWrites[storageIndex].pBufferInfo = &bufferInfo[storageIndex];
 	
-	vkUpdateDescriptorSets(device, 2, descriptorWrites, 0, nullptr);
+	descriptorWrites[normalIndex].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[normalIndex].dstSet = descriptorSet;
+	descriptorWrites[normalIndex].dstBinding = 2;
+	descriptorWrites[normalIndex].dstArrayElement = 0;
+	descriptorWrites[normalIndex].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptorWrites[normalIndex].descriptorCount = 1;
+	descriptorWrites[normalIndex].pBufferInfo = &bufferInfo[normalIndex];
+	
+	vkUpdateDescriptorSets(device, numBindings, descriptorWrites, 0, nullptr);
 		
 	std::ifstream file("comp.spv", std::ios::ate | std::ios::binary);
 	
@@ -269,40 +299,56 @@ VkCommandBuffer* Compute::SetupCommandBuffer(VkDevice& device, uint32_t queueFam
 		throw std::runtime_error("Compute command buffer beign failed");
 	}
 	
-	memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	memoryBarrier.buffer = storageBuffer;
-	memoryBarrier.size = storageBufferSize;
-	memoryBarrier.srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-	memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	memoryBarrier.srcQueueFamilyIndex = queueFamilyId;
-	memoryBarrier.dstQueueFamilyIndex = queueFamilyId;
+	memoryBarriers[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	memoryBarriers[0].buffer = storageBuffer;
+	memoryBarriers[0].size = storageBufferSize;
+	memoryBarriers[0].srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	memoryBarriers[0].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarriers[0].srcQueueFamilyIndex = queueFamilyId;
+	memoryBarriers[0].dstQueueFamilyIndex = queueFamilyId;
+	
+	memoryBarriers[1].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	memoryBarriers[1].buffer = normalBuffer;
+	memoryBarriers[1].size = normalBufferSize;
+	memoryBarriers[1].srcAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	memoryBarriers[1].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarriers[1].srcQueueFamilyIndex = queueFamilyId;
+	memoryBarriers[1].dstQueueFamilyIndex = queueFamilyId;
 	
 	vkCmdPipelineBarrier(commandBuffer,
 						 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 						 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 						 0,
 					     0, nullptr,
-						 1, &memoryBarrier,
+						 2, memoryBarriers,
 						 0, nullptr);
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineLayout, 0, 1, &descriptorSet, 0, 0);
 	vkCmdDispatch(commandBuffer, extent.width, extent.height, 1);
 
-	memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	memoryBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-	memoryBarrier.buffer = storageBuffer;
-	memoryBarrier.size = storageBufferSize;
-	memoryBarrier.srcQueueFamilyIndex = queueFamilyId;
-	memoryBarrier.dstQueueFamilyIndex = queueFamilyId;
+	memoryBarriers[0].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	memoryBarriers[0].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarriers[0].dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	memoryBarriers[0].buffer = storageBuffer;
+	memoryBarriers[0].size = storageBufferSize;
+	memoryBarriers[0].srcQueueFamilyIndex = queueFamilyId;
+	memoryBarriers[0].dstQueueFamilyIndex = queueFamilyId;
+	
+	memoryBarriers[1].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	memoryBarriers[1].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	memoryBarriers[1].dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+	memoryBarriers[1].buffer = normalBuffer;
+	memoryBarriers[1].size = normalBufferSize;
+	memoryBarriers[1].srcQueueFamilyIndex = queueFamilyId;
+	memoryBarriers[1].dstQueueFamilyIndex = queueFamilyId;
 	
 	vkCmdPipelineBarrier(commandBuffer,
 						 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 						 VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 						 0,
 						 0, nullptr,
-						 1, &memoryBarrier,
+						 2, memoryBarriers,
 						 0, nullptr);
 
 	vkEndCommandBuffer(commandBuffer);

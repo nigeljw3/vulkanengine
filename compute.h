@@ -35,6 +35,7 @@ public:
 	VkCommandBuffer* SetupCommandBuffer(VkDevice& device, uint32_t queueFamilyId);
 	
 	VkBuffer& GetStorageBuffer() { return storageBuffer; }
+	VkBuffer& GetNormalBuffer() { return normalBuffer; }
 	
 	void PrintResults(VkDevice& device);
 	
@@ -54,15 +55,17 @@ private:
 	VkPipelineLayout pipelineLayout;
 	
 	VkCommandBuffer commandBuffer;
-	VkBufferMemoryBarrier memoryBarrier = {};
+	VkBufferMemoryBarrier memoryBarriers[2] = { {}, {} };
 	//VkDeviceMemory memory;
 	
 	//VkImage image;
 	VkBuffer uniformBuffer;
 	VkBuffer storageBuffer;
+	VkBuffer normalBuffer;
 	
 	VkDeviceMemory uniformBufferMemory;
 	VkDeviceMemory storageBufferMemory;
+	VkDeviceMemory normalBufferMemory;
 	//VkDeviceMemory imageMemory;
 	
 	VkCommandPool commandPool;
@@ -70,8 +73,8 @@ private:
 	VkExtent3D extent;
 	
 	VkDescriptorSet descriptorSet;
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorPool descriptorPool;
+	VkDescriptorSetLayout descriptorSetLayout = {};
+	VkDescriptorPool descriptorPool = {};
 	
 	//uint32_t size;
 	
@@ -79,6 +82,7 @@ private:
 	
 	uint32_t uniformBufferSize;
 	uint32_t storageBufferSize;
+	uint32_t normalBufferSize;
 	
 	VkFence fence;
 	

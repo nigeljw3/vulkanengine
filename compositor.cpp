@@ -135,7 +135,7 @@ bool Compositor::Init(VkDevice& device,
 	
 	computeCommandBuffer = computer->SetupCommandBuffer(device, queueFamilyId);	
 	
-	graphicsEngine->ConstructFrames(computer->GetStorageBuffer());
+	graphicsEngine->ConstructFrames(computer->GetStorageBuffer(), computer->GetNormalBuffer());
 	
 	VkCommandBuffer transferCommandBuffers[] = { staticTransferCommandBuffer, dynamicTransferCommandBuffer };
 	

@@ -15,7 +15,7 @@ VULKAN_PATH = /c/Dev/VulkanSDK/1.0.30.0
 GLFW_PATH = /c/Dev/glfw/glfw-3.2.1.bin.WIN32
 GLM_PATH = /C/Dev/glm
 
-CFLAGS = -std=c++11 -Wall
+CFLAGS = -std=c++11 -Wall -g
 INCLUDE = -I$(VULKAN_PATH)/include -I$(GLFW_PATH)/include -I$(GLM_PATH)
 LDFLAGS = -L$(VULKAN_PATH)/Bin32 -L$(GLFW_PATH)/lib-mingw
 LDLIBS = -lvulkan-1 -lglfw3 -lgdi32

@@ -106,11 +106,11 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 			vertexInfo[index + 5] = 1.0f;
 			
 			// Normal
-			vertexInfo[index + 6] = 0.0f;
-			vertexInfo[index + 7] = 1.0f;
-			vertexInfo[index + 8] = 0.0f;
+			//vertexInfo[index + 6] = 0.0f;
+			//vertexInfo[index + 7] = 1.0f;
+			//vertexInfo[index + 8] = 0.0f;
 						
-			index += 9;
+			index += 6;
 			xPos += delta;
 		}
 		
@@ -200,7 +200,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 2;
+	vertexInputInfo.vertexBindingDescriptionCount = numBindDesc;
 	vertexInputInfo.vertexAttributeDescriptionCount = numAttrDesc;
 	vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions;
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
@@ -464,7 +464,7 @@ bool Renderer::Destroy(VkDevice& device)
 	return true;
 }
 
-void Renderer::ConstructFrames(VkBuffer& heightBuffer)
+void Renderer::ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer)
 {
 	bool result = false;
 	
@@ -484,9 +484,9 @@ void Renderer::ConstructFrames(VkBuffer& heightBuffer)
 	renderPassBeginInfo.clearValueCount = 1;
 	renderPassBeginInfo.pClearValues = &clearColor;
 	
-	VkDeviceSize offsets[] = {0};
+	VkDeviceSize offsets[] = {0, 0, 0};
 	
-	VkBuffer buffers[] = { vertexBuffer, heightBuffer };
+	VkBuffer buffers[] = { vertexBuffer, heightBuffer, normalBuffer};
 	
 	assert(numDrawCmdBuffers == numFBOs);
 	
@@ -498,7 +498,7 @@ void Renderer::ConstructFrames(VkBuffer& heightBuffer)
 		vkCmdBeginRenderPass(drawCommandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindDescriptorSets(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 		vkCmdBindPipeline(drawCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 2, buffers, offsets);
+		vkCmdBindVertexBuffers(drawCommandBuffers[i], 0, 3, buffers, offsets);
 		vkCmdBindIndexBuffer(drawCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 		vkCmdDrawIndexed(drawCommandBuffers[i], numIndices, 1, 0, 0, 0);
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
@@ -515,13 +515,17 @@ void Renderer::ConstructFrames(VkBuffer& heightBuffer)
 bool Renderer::SetupShaderParameters(VkDevice& device)
 {
 	bindingDescriptions[0].binding = 0;
-	bindingDescriptions[0].stride = sizeof(float[3]) * 3;
+	bindingDescriptions[0].stride = sizeof(float[3]) * 2;
 	bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	
 	bindingDescriptions[1].binding = 1;
 	bindingDescriptions[1].stride = sizeof(float);
 	bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
+	bindingDescriptions[2].binding = 2;
+	bindingDescriptions[2].stride = sizeof(float[3]);
+	bindingDescriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	
 	attributeDescriptions[0].binding = 0;
 	attributeDescriptions[0].location = 0;
 	attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -532,14 +536,14 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescriptions[1].offset = sizeof(float[3]);
 	
-	attributeDescriptions[2].binding = 0;
+	attributeDescriptions[2].binding = 1;
 	attributeDescriptions[2].location = 2;
-	attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-	attributeDescriptions[2].offset = sizeof(float[3])*2;
+	attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
+	attributeDescriptions[2].offset = 0;
 	
-	attributeDescriptions[3].binding = 1;
+	attributeDescriptions[3].binding = 2;
 	attributeDescriptions[3].location = 3;
-	attributeDescriptions[3].format = VK_FORMAT_R32_SFLOAT;
+	attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescriptions[3].offset = 0;
 	
     uboLayoutBinding.binding = 0;

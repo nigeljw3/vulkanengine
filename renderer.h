@@ -33,7 +33,7 @@ public:
 	~Renderer();
 	
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
-	void ConstructFrames(VkBuffer& heightBuffer);
+	void ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer);
 	
 	VkCommandBuffer* GetFrame(uint32_t index)
 	{
@@ -102,10 +102,10 @@ private:
 	const uint32_t numFBOs = 2;
 	const uint32_t numDrawCmdBuffers = 2;
 	const uint32_t numAttrDesc = 4;
-	const uint32_t numBindDesc = 2;
+	const uint32_t numBindDesc = 3;
 	//const uint32_t numVertices = 3;
 	const uint32_t numComponents = 3;
-	const uint32_t numVertexElements = 3;
+	const uint32_t numVertexElements = 2;
 	
 	uint32_t mat4Size;
 	uint32_t uboSize;
