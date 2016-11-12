@@ -1,17 +1,19 @@
 /**
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016 Nigel Williams
+ *
+ * Vulkan Free Surface Modeling Engine (VFSME) is free software:
+ * you can redistribute it and/or modify it under the terms of the
+ * GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 3.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #include "compositor.h"
 
@@ -22,7 +24,8 @@
 #include <cstdio>
 #include <limits>
 
-#include "types.h"
+namespace vfsme
+{
 
 Compositor::Compositor(VkPhysicalDeviceMemoryProperties& memProps)
 : imageCount(2),
@@ -41,6 +44,8 @@ Compositor::~Compositor()
 
 bool Compositor::Init(VkDevice& device,
 					  VkSurfaceKHR& surface,
+					  uint32_t width,
+					  uint32_t height,
 					  uint32_t queueFamilyId,
 					  uint32_t graphicsQueueIndex,
 					  uint32_t presentQueueIndex,
@@ -52,7 +57,7 @@ bool Compositor::Init(VkDevice& device,
 	//swapSurfaceFormat.format = requiredFormat;
 	//swapSurfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
 	
-	VkExtent2D screenExtent = {800, 600};
+	VkExtent2D screenExtent = {width, height};
 
     //actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
     //actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
@@ -182,7 +187,7 @@ bool Compositor::Destroy(VkDevice& device)
 	return true;
 }
 
-bool once = true;
+//bool once = true;
 
 bool Compositor::Draw(VkDevice& device)
 {
@@ -196,11 +201,11 @@ bool Compositor::Draw(VkDevice& device)
 	vkQueueSubmit(computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(computeQueue);
 	
-	if(once)
+	/*if(once)
 	{
 		computer->PrintResults(device);
 		once = false;
-	}
+	}*/
 	
 	transferCommandBuffer = &graphicsEngine->TransferDynamicBuffers(device);
 	
@@ -256,29 +261,4 @@ bool Compositor::Draw(VkDevice& device)
 	return true;
 }
 
-uint32_t Compositor::GetMemoryTypeIndex(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize)
-{
-	VkMemoryRequirements memRequirements;
-	
-	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-		
-	uint32_t memTypeIndex = InvalidIndex;
-	
-	for (uint32_t i = 0; i < props.memoryTypeCount; ++i)
-	{
-		if ((memRequirements.memoryTypeBits & (1 << i)) &&
-			(props.memoryTypes[i].propertyFlags & propFlags) == propFlags)
-		{
-			memTypeIndex = i;
-		}
-	}
-	
-	if (memTypeIndex == InvalidIndex)
-	{
-		throw std::runtime_error("Memory property combination not supported");
-	}
-	
-	allocSize = memRequirements.size;
-	
-	return memTypeIndex;
-}
+};

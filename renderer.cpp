@@ -1,20 +1,21 @@
 /**
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016 Nigel Williams
+ *
+ * Vulkan Free Surface Modeling Engine (VFSME) is free software:
+ * you can redistribute it and/or modify it under the terms of the
+ * GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 3.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #include "renderer.h"
-#include "types.h"
 
 #ifdef __STDC_LIB_EXT1__ 
 #define __STDC_WANT_LIB_EXT1__ 1
@@ -34,7 +35,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext.hpp> //"glm/gtx/string_cast.hpp"
 
-//Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback)
+namespace vfsme
+{
+
 Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps)
 :	Commands(memProps),
 	imageExtent(extent),
@@ -615,55 +618,6 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	return true;
 }
 
-/*bool Renderer::SetupClientSideVertexBuffer(VkDevice& device)
-{
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = vertexInfoSize;
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer);
-    	
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create vertex buffer");
-    }
-	
-	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	VkMemoryRequirements memRequirements;
-	
-	vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
-	
-	uint32_t allocSize;
-	uint32_t bufferMemTypeIndex = GetMemoryTypeIndex(device, vertexBuffer, memProperties, properties, allocSize);
-	
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = allocSize;
-	allocInfo.memoryTypeIndex = bufferMemTypeIndex;
-	
-	std::cout << allocSize << std::endl;
-	std::cout << bufferMemTypeIndex << std::endl;
-	
-	result = vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory);
-	
-	if (result != VK_SUCCESS)
-	{
-		throw std::runtime_error("Vertex buffer memory allocation failed");
-	}
-	
-	void* data;
-	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-	//std::memcpy_s(data, sizeof(data), vertexInfo, (size_t) bufferInfo.size)
-	memcpy(data, vertexInfo, (size_t) bufferInfo.size);
-	vkUnmapMemory(device, vertexBufferMemory);
-	
-	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
-	
-	return true;
-}*/
-
 bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
 {
 	VkDeviceSize size = vertexInfoSize;
@@ -748,7 +702,7 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
 	glm::mat4 model; //= glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 6.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 proj = glm::perspective(glm::radians(90.0f), imageExtent.width / (float) imageExtent.height, 0.1f, 100.0f);
 	proj[1][1] *= -1;
 	
@@ -815,6 +769,4 @@ void Renderer::SetupUniformBuffer(VkDevice &device)
 	SetupBuffer(device, uniformBuffer, uniformBufferMemory, size, properties, usage);
 }
 
-void Renderer::Draw(VkDevice &device)
-{
-}
+};

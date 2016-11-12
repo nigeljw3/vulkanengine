@@ -1,15 +1,17 @@
 /**
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016 Nigel Williams
+ *
+ * Vulkan Free Surface Modeling Engine (VFSME) is free software:
+ * you can redistribute it and/or modify it under the terms of the
+ * GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 3.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -19,9 +21,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "types.h"
+namespace vfsme
+{
 
-//Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback)
 Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props)
 : Commands(props),
   extent(inputExtent),
@@ -30,8 +32,6 @@ Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props
   normalBufferSize(sizeof(float[4]) * inputExtent.width * inputExtent.height),  
   startTime(std::chrono::high_resolution_clock::now())
 {
-	//GetMemoryTypeIndexCallback = memTypeIndexCallback;
-	
 	std::cout << "ubo size: " << uniformBufferSize << std::endl;
 }
 
@@ -42,15 +42,9 @@ Compute::~Compute()
 
 void Compute::Init(VkDevice& device)
 {	
-	//VkFormat format = VK_FORMAT_R32_SFLOAT;
-	
-	//assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-	
-	VkMemoryPropertyFlags properties; //= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	VkBufferUsageFlags usage; //= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+	VkMemoryPropertyFlags properties;
+	VkBufferUsageFlags usage;
 		
-	//SetupImage(device, image, extent, format, imageMemory, properties, usage);
-	
 	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 	
@@ -61,7 +55,7 @@ void Compute::Init(VkDevice& device)
 
 	SetupBuffer(device, storageBuffer, storageBufferMemory, storageBufferSize, properties, usage);
 	
-	properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
 	SetupBuffer(device, normalBuffer, normalBufferMemory, normalBufferSize, properties, usage);
@@ -69,14 +63,6 @@ void Compute::Init(VkDevice& device)
 
 void Compute::Destroy(VkDevice& device)
 {
-	//vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-	
-	//vkDestroyCommandPool(device, commandPool, nullptr);
-	
-	//vkFreeMemory(device, imageMemory, nullptr);
-	
-	//vkDestroyImage(device, image, nullptr);
-	
 	vkFreeMemory(device, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(device, uniformBuffer, nullptr);
 
@@ -99,11 +85,6 @@ void Compute::Destroy(VkDevice& device)
 	
 	vkDestroyFence(device, fence, nullptr);
 }
-
-/*void Compute::SetupBuffers(VkDevice& device)
-{
-	
-}*/
 
 void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 {	
@@ -362,11 +343,11 @@ void Compute::UpdateWave(VkDevice& device)
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
 	float pi = 3.14;
-	float lambda = 4.0;
+	float lambda = 6.0;
 	float k = 2.0*pi/lambda;
 	float omega = 2.0;
 	float dx = 0.5;
-	float amplitude = 0.5;
+	float amplitude = 1.0;
 	
 	void* data;
     vkMapMemory(device, uniformBufferMemory, 0, uniformBufferSize, 0, &data);
@@ -407,3 +388,5 @@ void Compute::PrintResults(VkDevice& device)
 	
     vkUnmapMemory(device, normalBufferMemory);
 }
+
+};

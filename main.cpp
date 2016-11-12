@@ -1,17 +1,19 @@
 /**
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2016 Nigel Williams
+ *
+ * Vulkan Free Surface Modeling Engine (VFSME) is free software:
+ * you can redistribute it and/or modify it under the terms of the
+ * GNU Lesser General Public License as published by
+ * the Free Software Foundation, version 3.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 #include <vulkan/vulkan.h>
 
@@ -30,13 +32,16 @@
 
 int main()
 {	
+	const uint32_t width = 1920;
+	const uint32_t height = 1080;
+
 	try
 	{
-		System window;
+		vfsme::System window;
 			
-		window.Init();
+		window.Init(width, height);
 		
-		Controller devCtrl;
+		vfsme::Controller devCtrl;
 		
 		devCtrl.Init();
 
@@ -50,7 +55,7 @@ int main()
 		
 		devCtrl.Configure(surface);
 			
-		Compositor composer(devCtrl.GetMemoryProperties());
+		vfsme::Compositor composer(devCtrl.GetMemoryProperties());
 		
 		bool supported = devCtrl.PresentModeSupported(surface, composer.GetPresentMode()) &&
 						 devCtrl.SurfaceFormatSupported(surface, composer.GetSurfaceFormat());
@@ -58,7 +63,7 @@ int main()
 		if (supported)
 		{
 			composer.Init(devCtrl.GetDevice(),
-						  surface,
+						  surface, width, height,
 						  devCtrl.GetQueueFamilyId(),
 						  devCtrl.GetGraphicsQueueIndex(),
 						  devCtrl.GetPresentQueueIndex(),
