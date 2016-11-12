@@ -44,26 +44,34 @@ Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDevi
 
 	numVerts = grid.width * grid.height;
 	numPrims = (grid.width - 1) * (grid.height - 1) * 2;
-	vertexInfoSize = sizeof(float) * numComponents * numVerts * 2;
+	vertexInfoSize = sizeof(float) * numComponents * numVerts * numVertexElements;
 	numIndices = numPrims * numComponents;
 	indicesBufferSize = sizeof(uint16_t) * numIndices;
+	mat4Size = sizeof(float) * 16;
+	uboSize = mat4Size * 3 + sizeof(float[3]);
 	
-	vertexInfo = static_cast<float*>(malloc(vertexInfoSize));
-	indices = static_cast<uint16_t*>(malloc(indicesBufferSize));
-	framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
-	drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
-	attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
-	bindingDescriptions = static_cast<VkVertexInputBindingDescription*>(malloc(sizeof(VkVertexInputBindingDescription)*numBindDesc));
+	vertexInfo = new float[vertexInfoSize];
+	indices = new uint16_t[indicesBufferSize];
+	framebuffers = new VkFramebuffer[numFBOs];
+	drawCommandBuffers = new VkCommandBuffer[numDrawCmdBuffers];
+	attributeDescriptions = new VkVertexInputAttributeDescription[numAttrDesc];
+	bindingDescriptions = new VkVertexInputBindingDescription[numBindDesc];
+	//vertexInfo = static_cast<float*>(malloc(vertexInfoSize));
+	//indices = static_cast<uint16_t*>(malloc(indicesBufferSize));
+	//framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
+	//drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
+	//attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
+	//bindingDescriptions = static_cast<VkVertexInputBindingDescription*>(malloc(sizeof(VkVertexInputBindingDescription)*numBindDesc));
 }
 
 Renderer::~Renderer()
 {
-	free(vertexInfo);
-	free(indices);
-	free(framebuffers);
-	free(drawCommandBuffers);
-	free(attributeDescriptions);
-	free(bindingDescriptions);
+	delete[] vertexInfo;
+	delete[] indices;
+	delete[] framebuffers;
+	delete[] drawCommandBuffers;
+	delete[] attributeDescriptions;
+	delete[] bindingDescriptions;
 }
 
 bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
@@ -87,15 +95,22 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	{
 		for (uint32_t j = 0; j < grid.width; ++j)
 		{
+			// Position
 			vertexInfo[index] = xPos;
 			vertexInfo[index + 1] = zPos;
 			vertexInfo[index + 2] = yPos;
 			
+			// Color
 			vertexInfo[index + 3] = 0.0f;
 			vertexInfo[index + 4] = 0.0f;
 			vertexInfo[index + 5] = 1.0f;
+			
+			// Normal
+			vertexInfo[index + 6] = 0.0f;
+			vertexInfo[index + 7] = 1.0f;
+			vertexInfo[index + 8] = 0.0f;
 						
-			index += 6;
+			index += 9;
 			xPos += delta;
 		}
 		
@@ -500,7 +515,7 @@ void Renderer::ConstructFrames(VkBuffer& heightBuffer)
 bool Renderer::SetupShaderParameters(VkDevice& device)
 {
 	bindingDescriptions[0].binding = 0;
-	bindingDescriptions[0].stride = sizeof(float[3]) * 2;
+	bindingDescriptions[0].stride = sizeof(float[3]) * 3;
 	bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 	
 	bindingDescriptions[1].binding = 1;
@@ -517,11 +532,16 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescriptions[1].offset = sizeof(float[3]);
 	
-	attributeDescriptions[2].binding = 1;
+	attributeDescriptions[2].binding = 0;
 	attributeDescriptions[2].location = 2;
-	attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
-	attributeDescriptions[2].offset = 0;
-
+	attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[2].offset = sizeof(float[3])*2;
+	
+	attributeDescriptions[3].binding = 1;
+	attributeDescriptions[3].location = 3;
+	attributeDescriptions[3].format = VK_FORMAT_R32_SFLOAT;
+	attributeDescriptions[3].offset = 0;
+	
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
@@ -573,7 +593,7 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = mvpSize;
+	bufferInfo.range = uboSize;
 	
 	VkWriteDescriptorSet descriptorWrite = {};
 	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -679,7 +699,7 @@ void Renderer::SetupDynamicTransfer(VkDevice& device)
 	vkBeginCommandBuffer(dynamicTransferCommandBuffer, &beginInfo);
 	
 	VkBufferCopy copyRegion = {};
-	copyRegion.size = mvpSize;
+	copyRegion.size = uboSize;
 	vkCmdCopyBuffer(dynamicTransferCommandBuffer, uniformTransferBuffer, uniformBuffer, 1, &copyRegion);
 	
 	copyRegion.size = vertexInfoSize;
@@ -723,19 +743,33 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
-	glm::mat4 model; // = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 model; //= glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 proj = glm::perspective(glm::radians(90.0f), imageExtent.width / (float) imageExtent.height, 0.1f, 100.0f);
 	proj[1][1] *= -1;
 	
-	mvp = proj * view * model;
+	float lightPos[] = { 10.0, 10.0, 0.0 };
 	
-	VkDeviceSize size = mvpSize;
+	//mvp = proj * view * model;
+	
+	VkDeviceSize size = uboSize;
 	
 	void* data;
     vkMapMemory(device, uniformTransferBufferMemory, 0, size, 0, &data);
-	memcpy(data, glm::value_ptr(mvp), (size_t) size);
-    vkUnmapMemory(device, uniformTransferBufferMemory);
+	
+	//memcpy(data, glm::value_ptr(mvp), (size_t) size);
+	
+	char* bytes = static_cast<char*>(data);
+    
+	memcpy(bytes, glm::value_ptr(model), (size_t) mat4Size);
+	bytes += mat4Size;
+    memcpy(bytes, glm::value_ptr(view), (size_t) mat4Size);
+    bytes += mat4Size;
+	memcpy(bytes, glm::value_ptr(proj), (size_t) mat4Size);
+	bytes += mat4Size;
+	memcpy(bytes, lightPos, sizeof(float[3]));
+	
+	vkUnmapMemory(device, uniformTransferBufferMemory);
 	
 	return dynamicTransferCommandBuffer;
 }
@@ -764,7 +798,7 @@ bool Renderer::SetupIndexBuffer(VkDevice& device)
 
 void Renderer::SetupUniformBuffer(VkDevice &device)
 {
-	VkDeviceSize size = mvpSize;
+	VkDeviceSize size = uboSize;
 	
 	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;

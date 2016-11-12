@@ -182,7 +182,7 @@ bool Compositor::Destroy(VkDevice& device)
 	return true;
 }
 
-bool once = true;
+//bool once = true;
 
 bool Compositor::Draw(VkDevice& device)
 {
@@ -196,11 +196,11 @@ bool Compositor::Draw(VkDevice& device)
 	vkQueueSubmit(computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(computeQueue);
 	
-	if(once)
+	/*if(once)
 	{
 		computer->PrintResults(device);
 		once = false;
-	}
+	}*/
 	
 	transferCommandBuffer = &graphicsEngine->TransferDynamicBuffers(device);
 	

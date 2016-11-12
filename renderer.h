@@ -91,34 +91,35 @@ private:
 	VkBuffer* heightBuffer;
 
 	VkVertexInputAttributeDescription* attributeDescriptions;
-	VkVertexInputBindingDescription* bindingDescriptions = {};
+	VkVertexInputBindingDescription* bindingDescriptions;
 	VkDescriptorSetLayoutBinding uboLayoutBinding = {};
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSet descriptorSet;
 	
+	const VkExtent3D grid;
+	
 	const uint32_t numFBOs = 2;
 	const uint32_t numDrawCmdBuffers = 2;
-	const uint32_t numAttrDesc = 3;
+	const uint32_t numAttrDesc = 4;
 	const uint32_t numBindDesc = 2;
-	const uint32_t numVertices = 3;
+	//const uint32_t numVertices = 3;
+	const uint32_t numComponents = 3;
+	const uint32_t numVertexElements = 3;
+	
+	uint32_t mat4Size;
+	uint32_t uboSize;
 	
 	glm::mat4 mvp;
 	
 	float* vertexInfo;
 	uint16_t* indices;
 	
-	const uint32_t mvpSize = sizeof(float)*16;
-	
 	uint32_t vertexInfoSize;
 	uint16_t numIndices;
 	uint32_t indicesBufferSize;
 	uint32_t numVerts;
 	uint32_t numPrims;
-	
-	const uint32_t numComponents = 3;
-	
-	const VkExtent3D grid;
 };
 
 #endif
