@@ -45,19 +45,9 @@ void main()
 {
     // Current SSBO index
     //uint index = gl_LocalInvocationID.x;
-	uint index = gl_LocalInvocationIndex;	
-
+	uint index = gl_LocalInvocationIndex;
 	//uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-	
-	//uint index = 0;
-	
-    float value = 1.0;
 
-	//for(int i = 0; i < height.length(); ++i)
-	//{
-	//	height[i] = 1.0;
-	//}
-	
 	float kx = ubo.k * gl_LocalInvocationID.x * ubo.dx;
 	
     height[index] = ubo.amplitude*sin(kx - ubo.omega*ubo.time);

@@ -30,9 +30,7 @@ layout(location = 7) in float inSpecularConst;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    //outColor = vec4(inColor, 1.0);
-
-	vec3 eyeVec = normalize(-inEyePos);
+    vec3 eyeVec = normalize(-inEyePos);
 	vec3 reflected = normalize(reflect(-inLightVec, inNormal)); 
 	vec4 diffuse = inDiffuseLight * max(dot(inNormal, inLightVec), 0.0);
 	vec4 specular = inSpecularLight * pow(max(dot(reflected, eyeVec), 0.0), 0.8) * inSpecularConst; 

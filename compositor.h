@@ -48,8 +48,8 @@ public:
 	void Loop();
 	bool Destroy(VkDevice& device);
 	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);
-	VkFormat GetSurfaceFormat() { return surfaceFormat; }
-	VkPresentModeKHR GetPresentMode() { return presentMode; }
+	VkFormat GetSurfaceFormat() const { return surfaceFormat; }
+	VkPresentModeKHR GetPresentMode() const { return presentMode; }
 	
 	bool Draw(VkDevice& device);
 	

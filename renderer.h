@@ -30,7 +30,6 @@ namespace vfsme
 class Renderer : Commands
 {
 public:
-	//Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProperties, std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags properties, uint32_t& allocSize)> memTypeIndexCallback);
 	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps);
 	~Renderer();
 	

@@ -50,12 +50,11 @@ public:
 	VkPhysicalDeviceMemoryProperties& GetMemoryProperties() { return memProperties; }
 	
 	//VkSurfaceCapabilitiesKHR* GetCapabilities() { return &capabilities; }
-	//uint32_t GetQueueFamilyId() { return queueFamilyId; }
 	
-	uint32_t GetQueueFamilyId() { return queueFamilyId; }
-	uint32_t GetGraphicsQueueIndex() { return graphicsQueueIndex; }
-	uint32_t GetPresentQueueIndex(){ return presentQueueIndex; }
-	uint32_t GetComputeQueueIndex(){ return computeQueueIndex; }
+	uint32_t GetQueueFamilyId() const { return queueFamilyId; }
+	uint32_t GetGraphicsQueueIndex() const { return graphicsQueueIndex; }
+	uint32_t GetPresentQueueIndex() const { return presentQueueIndex; }
+	uint32_t GetComputeQueueIndex() const { return computeQueueIndex; }
 	
 	bool CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags);
 	

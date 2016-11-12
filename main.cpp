@@ -32,6 +32,8 @@
 
 int main()
 {	
+	///@note Static window size for now
+	/// If dynamic window resizing is added, then swap chain reconstruction is necessary
 	const uint32_t width = 1920;
 	const uint32_t height = 1080;
 
@@ -44,7 +46,6 @@ int main()
 		vfsme::Controller devCtrl;
 		
 		devCtrl.Init();
-
 		devCtrl.SetupQueue();
 		
 		VkSurfaceKHR surface;
@@ -52,7 +53,6 @@ int main()
 		window.CreateSurface(devCtrl.GetInstance(), &surface);
 		
 		devCtrl.SetupDevice(surface);
-		
 		devCtrl.Configure(surface);
 			
 		vfsme::Compositor composer(devCtrl.GetMemoryProperties());

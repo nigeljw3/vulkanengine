@@ -40,10 +40,6 @@ layout(location = 6) out vec4 outSpecularLight;
 layout(location = 7) out float outSpecularConst;
 
 void main() {
-	//gl_Position = vec4(inPosition, 1.0);
-    //gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
-    
-	//gl_Position = ubo.mvp * vec4(inPosition.x, inHeight, inPosition.z, 1.0);
     outColor = inColor;
 	outAmbientLight = vec4(0.3, 0.3, 0.3, 1.0);
 	outDiffuseLight = vec4(0.7, 0.7, 0.7, 1.0);

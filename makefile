@@ -26,13 +26,13 @@ OBJS = commands.o renderer.o system.o controller.o compositor.o compute.o
 
 .PHONY: clean test shaders
 
-vulkan: main.cpp $(OBJS)
+vulkan: main.cpp $(OBJS) shaders
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) $(LDFLAGS) -o vulkan main.cpp $(OBJS) $(LDLIBS)
 
 system.o: system.h system.cpp
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c system.cpp -o $@	
 
-commands.o: commands.h commands.cpp
+commands.o: commands.h commands.cpp shared.h
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c commands.cpp -o $@
 	
 renderer.o: renderer.h renderer.cpp commands.h
@@ -41,7 +41,7 @@ renderer.o: renderer.h renderer.cpp commands.h
 compute.o: compute.h compute.cpp commands.h
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c compute.cpp -o $@
 
-controller.o: controller.h controller.cpp
+controller.o: controller.h controller.cpp shared.h
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) -c controller.cpp -o $@
 	
 compositor.o: compositor.h compositor.cpp renderer.h compute.h
@@ -56,4 +56,4 @@ shaders:
 	$(VULKAN_PATH)/Bin32/glslangValidator.exe -V shader.comp
 
 clean:
-	rm *.exe *.o
+	rm *.exe *.o *.spv

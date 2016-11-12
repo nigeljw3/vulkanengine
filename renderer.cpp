@@ -43,8 +43,6 @@ Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDevi
 	imageExtent(extent),
 	grid(gridDim)
 {	
-	//GetMemoryTypeIndexCallback = memTypeIndexCallback;
-
 	numVerts = grid.width * grid.height;
 	numPrims = (grid.width - 1) * (grid.height - 1) * 2;
 	vertexInfoSize = sizeof(float) * numComponents * numVerts * numVertexElements;
@@ -59,12 +57,6 @@ Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDevi
 	drawCommandBuffers = new VkCommandBuffer[numDrawCmdBuffers];
 	attributeDescriptions = new VkVertexInputAttributeDescription[numAttrDesc];
 	bindingDescriptions = new VkVertexInputBindingDescription[numBindDesc];
-	//vertexInfo = static_cast<float*>(malloc(vertexInfoSize));
-	//indices = static_cast<uint16_t*>(malloc(indicesBufferSize));
-	//framebuffers = static_cast<VkFramebuffer*>(malloc(sizeof(VkFramebuffer)*numFBOs));
-	//drawCommandBuffers = static_cast<VkCommandBuffer*>(malloc(sizeof(VkCommandBuffer)*numDrawCmdBuffers));
-	//attributeDescriptions = static_cast<VkVertexInputAttributeDescription*>(malloc(sizeof(VkVertexInputAttributeDescription)*numAttrDesc));
-	//bindingDescriptions = static_cast<VkVertexInputBindingDescription*>(malloc(sizeof(VkVertexInputBindingDescription)*numBindDesc));
 }
 
 Renderer::~Renderer()
@@ -696,10 +688,10 @@ VkCommandBuffer& Renderer::TransferStaticBuffers(VkDevice& device)
 
 VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
+	//static auto startTime = std::chrono::high_resolution_clock::now();
 
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+    //auto currentTime = std::chrono::high_resolution_clock::now();
+    //float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
 	glm::mat4 model; //= glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 6.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -708,14 +700,10 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
 	
 	float lightPos[] = { 10.0, 10.0, 0.0 };
 	
-	//mvp = proj * view * model;
-	
 	VkDeviceSize size = uboSize;
 	
 	void* data;
     vkMapMemory(device, uniformTransferBufferMemory, 0, size, 0, &data);
-	
-	//memcpy(data, glm::value_ptr(mvp), (size_t) size);
 	
 	char* bytes = static_cast<char*>(data);
     
