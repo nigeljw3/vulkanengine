@@ -42,10 +42,7 @@ public:
 	
 	void ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer);
 	
-	VkCommandBuffer* GetFrame(uint32_t index)
-	{
-		return &drawCommandBuffers[index];
-	}
+	inline VkCommandBuffer* GetFrame(uint32_t index) const { return &drawCommandBuffers[index]; }
 	
 	VkCommandBuffer& TransferStaticBuffers(VkDevice& device);
 	VkCommandBuffer& TransferDynamicBuffers(VkDevice& device);

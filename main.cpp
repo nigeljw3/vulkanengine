@@ -39,7 +39,7 @@ int main()
 
 	try
 	{
-		vfsme::System window;
+		vfsme::System& window = vfsme::System::GetSingletonInstance();
 			
 		window.Init(width, height);
 		

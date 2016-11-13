@@ -18,23 +18,9 @@
 #include "system.h"
 
 #include <iostream>
-#include <vector>
-#include <cstring>
-#include <fstream>
-#include <cstdio>
 
 namespace vfsme
 {
-
-System::System()
-{
-	
-}
-
-System::~System()
-{
-	
-}
 
 bool System::Init(uint32_t width, uint32_t height)
 {

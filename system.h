@@ -31,22 +31,35 @@ namespace vfsme
 class System
 {
 public:
-	System();
-	~System();
-	
-	///@note Only define copy and assignment operators if they are actually required
+	///@note Singleton pattern implementation for the system class
+	/// as there will only ever be a single system on any platform
+	/// This is assured to be reentrant as of c++11 since concuurent
+	/// execution will wait for initialization
+	static System& GetSingletonInstance()
+	{
+	  static System instance;
+	  return instance;
+	}
+
+	///@note Remove copy and move contructors and assignment operators
+	/// since they should never be used with the single pattern
+	System(const System&) = delete;
+	System(System&&) = delete;
 	System& operator=(const System&) = delete;
-    System(const System&) = delete;
-	
+	System& operator=(System &&) = delete;
+    	
 	bool Init(uint32_t width, uint32_t height);
+	bool Destroy();
+	
 	bool CreateSurface(VkInstance& instance, VkSurfaceKHR* surface);
 	void Loop(Compositor& composer, VkDevice& device);
 	bool DestroySurface(VkInstance& instance, VkSurfaceKHR& surface);
-	bool Destroy();
 	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);
 
-	
 private:
+	System() = default;
+	~System() = default;
+
 	GLFWwindow* window;
 	unsigned int glfwExtensionCount = 0;
 	const char** glfwExtensions;

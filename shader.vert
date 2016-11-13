@@ -45,12 +45,16 @@ void main() {
 	outDiffuseLight = vec4(0.7, 0.7, 0.7, 1.0);
 	outSpecularConst = 0.25;
 	outSpecularLight = vec4(0.5, 0.5, 0.5, 1.0); 
-
 	outNormal = normalize(inNormal.xyz);
+	
 	mat4 modelView = ubo.view * ubo.model;
-	vec4 pos = modelView * vec4(inPosition.x, inHeight, inPosition.z, 1.0);	
+	vec4 pos = modelView * vec4(inPosition.x, inHeight, inPosition.z, 1.0);
+	
 	outEyePos = vec3(modelView * pos);
+	
 	vec4 lightPos = vec4(ubo.lightPos, 1.0) * modelView;
+	
 	outLightVec = normalize(ubo.lightPos.xyz - outEyePos);
+	
 	gl_Position = ubo.proj * pos;
 }

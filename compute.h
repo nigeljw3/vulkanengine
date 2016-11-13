@@ -40,8 +40,10 @@ public:
 	void Destroy(VkDevice& device);
 	void SetupQueue(VkDevice& device, uint32_t queueFamilyId);
 	VkCommandBuffer* SetupCommandBuffer(VkDevice& device, uint32_t queueFamilyId);
-	VkBuffer& GetStorageBuffer() { return storageBuffer; }
-	VkBuffer& GetNormalBuffer() { return normalBuffer; }
+	
+	inline VkBuffer& GetStorageBuffer() { return storageBuffer; }
+	inline VkBuffer& GetNormalBuffer() { return normalBuffer; }
+	
 	void PrintResults(VkDevice& device);
 	void UpdateWave(VkDevice& device);
 	

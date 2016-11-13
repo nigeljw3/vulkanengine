@@ -17,14 +17,14 @@ VULKAN_PATH = /c/Dev/VulkanSDK/1.0.30.0
 GLFW_PATH = /c/Dev/glfw/glfw-3.2.1.bin.WIN32
 GLM_PATH = /C/Dev/glm
 
-CFLAGS = -std=c++11 -Wall -g
+CFLAGS = -std=c++14 -Wall -g
 INCLUDE = -I$(VULKAN_PATH)/include -I$(GLFW_PATH)/include -I$(GLM_PATH)
 LDFLAGS = -L$(VULKAN_PATH)/Bin32 -L$(GLFW_PATH)/lib-mingw
 LDLIBS = -lvulkan-1 -lglfw3 -lgdi32
 DEFINES = -DVK_USE_PLATFORM_WIN32_KHR
 OBJS = commands.o renderer.o system.o controller.o compositor.o compute.o
 
-.PHONY: clean test shaders
+.PHONY: clean shaders test 
 
 vulkan: main.cpp $(OBJS) shaders
 	g++ $(CFLAGS) $(DEFINES) $(INCLUDE) $(LDFLAGS) -o vulkan main.cpp $(OBJS) $(LDLIBS)
