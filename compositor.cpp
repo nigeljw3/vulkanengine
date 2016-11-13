@@ -40,7 +40,7 @@ Compositor::~Compositor()
 	delete[] imageViews;
 }
 
-bool Compositor::Init(VkDevice& device,
+void Compositor::Init(VkDevice& device,
 					  const VkSurfaceKHR& surface,
 					  uint32_t width,
 					  uint32_t height,
@@ -150,11 +150,9 @@ bool Compositor::Init(VkDevice& device,
 	
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &waitSemaphore);
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &signalSemaphore);
-	
-	return true;
 }
 
-bool Compositor::Destroy(VkDevice& device)
+void Compositor::Destroy(VkDevice& device)
 {
 	vkDestroySemaphore(device, waitSemaphore, nullptr);
 	vkDestroySemaphore(device, signalSemaphore, nullptr);	
@@ -174,13 +172,11 @@ bool Compositor::Destroy(VkDevice& device)
 	
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
 	vkDestroyDevice(device, nullptr);
-	
-	return true;
 }
 
 //bool once = true;
 
-bool Compositor::Draw(VkDevice& device)
+void Compositor::Draw(VkDevice& device)
 {
 	computer->UpdateWave(device);
 	
@@ -248,8 +244,6 @@ bool Compositor::Draw(VkDevice& device)
 	
 	// Increment draw index to use correct image view for next frame
 	drawIndex = (drawIndex + 1) % 2;
-	
-	return true;
 }
 
 };

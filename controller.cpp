@@ -35,16 +35,6 @@ const char* layers[] = {
 
 const uint32_t numLayers = 2;
 
-Controller::Controller()
-{
-	queuePriorities = new float[queueCount]();
-}
-
-Controller::~Controller()
-{
-	delete[] queuePriorities;
-}
-
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugReportFlagsEXT flags,
     VkDebugReportObjectTypeEXT objType,
@@ -60,7 +50,17 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-bool Controller::Init()
+Controller::Controller()
+{
+	queuePriorities = new float[queueCount]();
+}
+
+Controller::~Controller()
+{
+	delete[] queuePriorities;
+}
+
+void Controller::Init()
 {
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -115,6 +115,11 @@ bool Controller::Init()
 			break;
 		}
 	}
+	
+	if (supported == false)
+	{
+		throw std::runtime_error("Extension not supported");
+	}
 		
 	createInfo.enabledExtensionCount = requestedExtensionCount;
 	createInfo.ppEnabledExtensionNames = requestedExtensions;
@@ -145,9 +150,13 @@ bool Controller::Init()
 		}
 	}
 	
+	if (supported == false)
+	{
+		throw std::runtime_error("Layer not supported");
+	}
+	
 	createInfo.enabledLayerCount = 1;
     createInfo.ppEnabledLayerNames = layers;
-	
 	
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
 	
@@ -167,7 +176,7 @@ bool Controller::Init()
 	
 	if (callbackResult != VK_SUCCESS)
 	{
-		std::cout << "error: did not create callback succesfuly" << std::endl;
+		throw std::runtime_error("Callback not created succesfuly");
 	}
 	
 	physicalDevice = VK_NULL_HANDLE;
@@ -176,7 +185,7 @@ bool Controller::Init()
 	
 	if (deviceCount == 0)
 	{
-		std::cout << "failed to find a device that supports Vulkan" << std::endl;	
+		throw std::runtime_error("Failed to find a device that supports Vulkan");	
 	}
 	
 	VkPhysicalDevice* devices = new VkPhysicalDevice[deviceCount]();
@@ -205,7 +214,7 @@ bool Controller::Init()
 	
 	if (foundDiscreteGPU == false)
 	{
-		std::cout << "failed to find a discrete GPU" << std::endl;
+		throw std::runtime_error("failed to find a discrete GPU");
 	}
 
 	vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
@@ -217,28 +226,24 @@ bool Controller::Init()
 	delete[] extensions;
 	
 	CheckFormatPropertyType(VK_FORMAT_R32_SFLOAT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-	
-	return true;
 }
 
-bool Controller::Destroy()
+void Controller::Destroy()
 {
 	auto vkDestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
     vkDestroyDebugReportCallback(instance, callback, nullptr);
 	
 	vkDestroyInstance(instance, nullptr);
-	
-	return true;
 }
 
-bool Controller::SetupQueue()
+void Controller::SetupQueue()
 {
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 	
 	if (queueFamilyCount == 0)
 	{
-		std::cout << "failed to find a device that supports Vulkan" << std::endl;	
+		throw std::runtime_error("Failed to find a queue that supports the device");	
 	}
 	
 	VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamilyCount]();
@@ -257,22 +262,20 @@ bool Controller::SetupQueue()
 	
 	if (queueFamilyId == InvalidIndex)
 	{
-		std::cout << "failed to get all indicies" << std::endl;
+		throw std::runtime_error("Failed to get queue family index");;
 	}
 	
 	delete[] queueFamilies;
-	
-	return true;
 }
 
-bool Controller::SetupDevice(const VkSurfaceKHR& surface)
+void Controller::SetupDevice(const VkSurfaceKHR& surface)
 {
 	VkBool32 presentSupport = false;
 	vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyId, surface, &presentSupport);
 	
 	if (presentSupport != true)
 	{
-		std::cout << "surface presetation not supported" << std::endl;
+		throw std::runtime_error("surface presetation not supported");
 	}
 
 	VkDeviceQueueCreateInfo queueCreateInfo = {};
@@ -309,7 +312,7 @@ bool Controller::SetupDevice(const VkSurfaceKHR& surface)
 	
 	if (supported == false)
 	{
-		std::cout << "VK_KHR_swapchain device extension not supported" << std::endl;
+		throw std::runtime_error("VK_KHR_swapchain device extension not supported");
 	}
 	
 	VkDeviceCreateInfo deviceCreateInfo = {};
@@ -326,15 +329,13 @@ bool Controller::SetupDevice(const VkSurfaceKHR& surface)
 	
 	if (deviceResult != VK_SUCCESS)
 	{
-		std::cout << "failed to create device" << std::endl;
+		throw std::runtime_error("failed to create device");
 	}
 
 	delete[] availableDeviceExtensions;
-	
-	return true;
 }
 
-bool Controller::Configure(const VkSurfaceKHR& surface)
+void Controller::Configure(const VkSurfaceKHR& surface)
 {
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
 	
@@ -344,10 +345,8 @@ bool Controller::Configure(const VkSurfaceKHR& surface)
 	
 	if ((capabilities.supportedTransforms & transform) == 0)
 	{
-		std::cout << "Transform not supported" << std::endl;
+		throw std::runtime_error("Transform not supported");
 	}
-	
-	return true;
 }
 
 void Controller::PrintCapabilities() const
@@ -437,21 +436,15 @@ bool Controller::SurfaceFormatSupported(const VkSurfaceKHR& surface, VkFormat su
 	return supported;
 }
 
-bool Controller::CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags) const
+void Controller::CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags) const
 {
 	VkFormatProperties formatProps;
 	vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
 	
-	if (formatProps.optimalTilingFeatures & flags)
-	{
-		return true;
-	}
-	else
+	if ((formatProps.optimalTilingFeatures & flags) == 0)
 	{
 		throw std::runtime_error("Format property not optimal");
 	}
-	
-	return false;
 }
 
 };

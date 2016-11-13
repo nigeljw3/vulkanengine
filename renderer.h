@@ -39,8 +39,8 @@ public:
 	Renderer& operator=(const Renderer&) = delete;
 	Renderer& operator=(Renderer &&) = delete;
 	
-	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
-	bool Destroy(VkDevice& device);
+	void Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
+	void Destroy(VkDevice& device);
 	
 	void ConstructFrames(const VkBuffer& heightBuffer, const VkBuffer& normalBuffer);
 	
@@ -50,13 +50,13 @@ public:
 	VkCommandBuffer& TransferDynamicBuffers(VkDevice& device);
 	
 private:
-	bool SetupIndexBuffer(VkDevice& device);
-	bool SetupClientSideVertexBuffer(VkDevice& device);
-	bool SetupServerSideVertexBuffer(VkDevice& device);
+	void SetupIndexBuffer(VkDevice& device);
+	void SetupClientSideVertexBuffer(VkDevice& device);
+	void SetupServerSideVertexBuffer(VkDevice& device);
 	void SetupUniformBuffer(VkDevice &device);
 	void SetupDynamicTransfer(VkDevice &device);
 	void SetupStaticTransfer(VkDevice &device);	
-	bool SetupShaderParameters(VkDevice& device);
+	void SetupShaderParameters(VkDevice& device);
 
 	VkExtent2D imageExtent;
 	VkShaderModule vertexShaderModule;

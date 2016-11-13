@@ -22,27 +22,20 @@
 namespace vfsme
 {
 
-bool System::Init(uint32_t width, uint32_t height)
+void System::Init(uint32_t width, uint32_t height)
 {
-	bool result = true;
-	
 	glfwInit();
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(width, height, "Vulkan window", nullptr, nullptr);
 
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	
-	return result;
 }
 
-bool System::Destroy()
+void System::Destroy()
 {
     glfwDestroyWindow(window);
-
     glfwTerminate();
-	
-	return true;
 }
 
 void System::Loop(Compositor& composer, VkDevice& device)
@@ -55,10 +48,8 @@ void System::Loop(Compositor& composer, VkDevice& device)
     }
 }
 
-bool System::CreateSurface(VkInstance& instance, VkSurfaceKHR* surface)
+void System::CreateSurface(VkInstance& instance, VkSurfaceKHR* surface)
 {
-	bool result = true;
-	
 	VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {};
 	surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	surfaceCreateInfo.hwnd = glfwGetWin32Window(window);
@@ -66,24 +57,19 @@ bool System::CreateSurface(VkInstance& instance, VkSurfaceKHR* surface)
 	
 	auto CreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR) vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
 	
-	VkResult surfaceResult = CreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, surface);
+	VkResult result = CreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, surface);
 	//glfwCreateWindowSurface(instance, window, nullptr, &surface)
 	
-	if (surfaceResult != VK_SUCCESS)
+	if (result != VK_SUCCESS)
 	{
-		std::cout << "failed to create surface" << std::endl;
-		result = false;
+		throw std::runtime_error("failed to create surface");;
 	}
-	
-	return result;
 }
 
-bool System::DestroySurface(VkInstance& instance, VkSurfaceKHR& surface)
+void System::DestroySurface(VkInstance& instance, VkSurfaceKHR& surface)
 {
 	auto DestroySurfaceKHR = (PFN_vkDestroySurfaceKHR) vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR");
 	DestroySurfaceKHR(instance, surface, nullptr);
-
-	return true;
 }
 
 bool System::CheckExtensionsSupport(uint32_t extensionCount, const VkExtensionProperties* extensions) const

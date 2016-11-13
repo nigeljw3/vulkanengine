@@ -37,16 +37,16 @@ public:
 	Controller& operator=(const Controller&) = delete;
 	Controller& operator=(Controller &&) = delete;
 
-	bool Init();
-	bool SetupQueue();
-	bool SetupDevice(const VkSurfaceKHR& surface);
-	bool Destroy();
+	void Init();
+	void SetupQueue();
+	void SetupDevice(const VkSurfaceKHR& surface);
+	void Destroy();
 	
 	inline VkPhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
 	inline VkDevice& GetDevice() { return device; }
 	inline VkInstance& GetInstance() { return instance; }
 	
-	bool Configure(const VkSurfaceKHR& surface);
+	void Configure(const VkSurfaceKHR& surface);
 	bool PresentModeSupported(const VkSurfaceKHR& surface, VkPresentModeKHR presentMode);
 	bool SurfaceFormatSupported(const VkSurfaceKHR& surface, VkFormat surfaceFormat) const;
 	
@@ -58,7 +58,7 @@ public:
 	inline uint32_t GetPresentQueueIndex() const { return presentQueueIndex; }
 	inline uint32_t GetComputeQueueIndex() const { return computeQueueIndex; }
 	
-	bool CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags) const;
+	void CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags) const;
 	
 private:
 	void PrintCapabilities() const;

@@ -79,7 +79,7 @@ void Commands::SetupImage(VkDevice& device, VkImage& image, const VkExtent3D& ex
 	}
 }
 
-bool Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage)
+void Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage)
 {
 	VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -114,8 +114,6 @@ bool Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
     }
 
     vkBindBufferMemory(device, buffer, memory, 0);
-	
-	return true;
 }
 
 uint32_t Commands::GetMemoryTypeIndex(VkDevice& device, const VkMemoryRequirements& memRequirements, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const

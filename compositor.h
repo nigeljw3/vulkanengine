@@ -38,7 +38,7 @@ public:
 	Compositor& operator=(const Compositor&) = delete;
 	Compositor& operator=(Compositor &&) = delete;
 	
-	bool Init(VkDevice& device,
+	void Init(VkDevice& device,
 			  const VkSurfaceKHR& surface,
 			  uint32_t width,
 			  uint32_t height,
@@ -48,12 +48,12 @@ public:
 			  uint32_t computeQueueIndex);
 			  
 	void Loop();
-	bool Destroy(VkDevice& device);
+	void Destroy(VkDevice& device);
 	
 	inline VkFormat GetSurfaceFormat() const { return surfaceFormat; }
 	inline VkPresentModeKHR GetPresentMode() const { return presentMode; }
 	
-	bool Draw(VkDevice& device);
+	void Draw(VkDevice& device);
 	
 private:
 	void PrintCapabilities();

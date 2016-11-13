@@ -69,10 +69,8 @@ Renderer::~Renderer()
 	delete[] bindingDescriptions;
 }
 
-bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
+void Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId)
 {
-	bool result = false;
-	
 	size_t vertexShaderFileSize;
 	char* vertexShader;
 	size_t fragmentShaderFileSize;
@@ -293,7 +291,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	//pipelineLayoutInfo.pushConstantRangeCount = 0;
 	//pipelineLayoutInfo.pPushConstantRanges = 0;
 	
-	result = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
+	VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
 	
 	if (result != VK_SUCCESS)
 	{
@@ -413,11 +411,9 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	}
 	
 	SetupDynamicTransfer(device);
-			
-	return true;
 }
 
-bool Renderer::Destroy(VkDevice& device)
+void Renderer::Destroy(VkDevice& device)
 {
 	vkFreeCommandBuffers(device, commandPool, 1, &staticTransferCommandBuffer);
 	vkFreeCommandBuffers(device, commandPool, 1, &dynamicTransferCommandBuffer);
@@ -455,14 +451,10 @@ bool Renderer::Destroy(VkDevice& device)
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyShaderModule(device, vertexShaderModule, nullptr);
 	vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
-	
-	return true;
 }
 
 void Renderer::ConstructFrames(const VkBuffer& heightBuffer, const VkBuffer& normalBuffer)
 {
-	bool result = false;
-	
 	VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -498,7 +490,7 @@ void Renderer::ConstructFrames(const VkBuffer& heightBuffer, const VkBuffer& nor
 		vkCmdDrawIndexed(drawCommandBuffers[i], numIndices, 1, 0, 0, 0);
 		vkCmdEndRenderPass(drawCommandBuffers[i]);
 		
-		result = vkEndCommandBuffer(drawCommandBuffers[i]);
+		VkResult result = vkEndCommandBuffer(drawCommandBuffers[i]);
 	
 		if (result != VK_SUCCESS)
 		{
@@ -507,7 +499,7 @@ void Renderer::ConstructFrames(const VkBuffer& heightBuffer, const VkBuffer& nor
 	}
 }
 
-bool Renderer::SetupShaderParameters(VkDevice& device)
+void Renderer::SetupShaderParameters(VkDevice& device)
 {
 	bindingDescriptions[0].binding = 0;
 	bindingDescriptions[0].stride = sizeof(float[3]) * 2;
@@ -606,11 +598,9 @@ bool Renderer::SetupShaderParameters(VkDevice& device)
 	//descriptorWrite.pTexelBufferView = nullptr;
 	
 	vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
-		
-	return true;
 }
 
-bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
+void Renderer::SetupServerSideVertexBuffer(VkDevice& device)
 {
 	VkDeviceSize size = vertexInfoSize;
 	
@@ -628,8 +618,6 @@ bool Renderer::SetupServerSideVertexBuffer(VkDevice& device)
     vkMapMemory(device, vertexTransferBufferMemory, 0, size, 0, &data);
     memcpy(data, vertexInfo, (size_t) size);
     vkUnmapMemory(device, vertexTransferBufferMemory);
-
-	return true;
 }
 
 void Renderer::SetupDynamicTransfer(VkDevice& device)
@@ -720,7 +708,7 @@ VkCommandBuffer& Renderer::TransferDynamicBuffers(VkDevice& device)
 	return dynamicTransferCommandBuffer;
 }
 
-bool Renderer::SetupIndexBuffer(VkDevice& device)
+void Renderer::SetupIndexBuffer(VkDevice& device)
 {
 	VkDeviceSize size = indicesBufferSize;
 	
@@ -738,8 +726,6 @@ bool Renderer::SetupIndexBuffer(VkDevice& device)
     vkMapMemory(device, indexTransferBufferMemory, 0, size, 0, &data);
     memcpy(data, indices, (size_t) size);
     vkUnmapMemory(device, indexTransferBufferMemory);
-
-	return true;
 }
 
 void Renderer::SetupUniformBuffer(VkDevice &device)

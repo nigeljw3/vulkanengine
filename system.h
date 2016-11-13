@@ -48,12 +48,12 @@ public:
 	System& operator=(const System&) = delete;
 	System& operator=(System &&) = delete;
     	
-	bool Init(uint32_t width, uint32_t height);
-	bool Destroy();
+	void Init(uint32_t width, uint32_t height);
+	void Destroy();
 	
-	bool CreateSurface(VkInstance& instance, VkSurfaceKHR* surface);
+	void CreateSurface(VkInstance& instance, VkSurfaceKHR* surface);
 	void Loop(Compositor& composer, VkDevice& device);
-	bool DestroySurface(VkInstance& instance, VkSurfaceKHR& surface);
+	void DestroySurface(VkInstance& instance, VkSurfaceKHR& surface);
 	bool CheckExtensionsSupport(uint32_t extensionCount, const VkExtensionProperties* extensions) const;
 
 private:
