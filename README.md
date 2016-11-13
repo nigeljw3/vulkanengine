@@ -1,21 +1,14 @@
 # VFSME - Vulkan Free Surface Modeling Engine
 
-
 A simple framework and demo application for free surface modeling using compute and rendering with the Vulkan API.
-
 
 ![Screenshot](/screenshot.png)
 
-
-[Nigel J W](http://nigeljw.com)
-
-
 Todo List:
-- [ ] Integrate exisiting Boussinesq equation framework for depth integration
+- [ ] Integrate existing Boussinesq equation framework for depth integration: See research at [Nigel J W](http://nigeljw.com)
 - [ ] Add other free surface modeling like cloth
 - [ ] Use lighter weight synchronization primitives between compute/transfer/render queues
 - [ ] Fix specular lighting in fragment shader
-
 
 Dependencies:
 
@@ -24,7 +17,6 @@ Dependencies:
 [GLFW] (http://www.glfw.org)
 
 [GLM] (http://glm.g-truc.net)
-
 
 Great references for the Vulkan API:
 
