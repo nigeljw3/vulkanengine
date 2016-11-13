@@ -347,6 +347,8 @@ void Compute::UpdateWave(VkDevice& device)
 	
 	float* waveData = static_cast<float*>(data);
 	
+	///@todo Only time needs to be dynamically update
+	/// Move wave parameters to static update
 	waveData[0] = time;
 	waveData[1] = wave.dx;
 	waveData[2] = wave.k;
@@ -360,7 +362,6 @@ void Compute::PrintResults(VkDevice& device)
 {
 	void* data;
     //vkMapMemory(device, storageBufferMemory, 0, storageBufferSize, 0, &data);
-	
 	vkMapMemory(device, normalBufferMemory, 0, normalBufferSize, 0, &data);
 	
 	float* mem = static_cast<float*>(data);

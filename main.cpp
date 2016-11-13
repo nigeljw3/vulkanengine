@@ -32,6 +32,8 @@
 
 int main()
 {	
+	///@todo Make window size configurable from command line arguments
+
 	///@note Static window size for now
 	/// If dynamic window resizing is added, then swap chain reconstruction is necessary
 	const uint32_t width = 1920;

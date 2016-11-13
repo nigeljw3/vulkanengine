@@ -186,6 +186,9 @@ void Compositor::Draw(VkDevice& device)
 	submitInfo.pCommandBuffers = computeCommandBuffer;
 
 	vkQueueSubmit(computeQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	
+	///@todo Move wait for idle to end of rendering or before queue destruction
+	/// Memory barriers in compute queue should handle synchronization between queues
 	vkQueueWaitIdle(computeQueue);
 	
 	/*if(once)
@@ -202,6 +205,8 @@ void Compositor::Draw(VkDevice& device)
 	submitInfo.pCommandBuffers = transferCommandBuffer;
 
 	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	
+	///@todo Change to a flush or use a memory barrier
 	vkQueueWaitIdle(graphicsQueue);
 	
 	drawCommandBuffer = graphicsEngine->GetFrame(drawIndex);

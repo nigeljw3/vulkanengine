@@ -90,6 +90,7 @@ private:
 	uint32_t storageBufferSize;
 	uint32_t normalBufferSize;
 	
+	///@todo Use the fence
 	VkFence fence;
 	
 	std::chrono::time_point<std::chrono::high_resolution_clock> startTime;
