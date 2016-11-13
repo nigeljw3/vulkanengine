@@ -38,7 +38,7 @@
 namespace vfsme
 {
 
-Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, const VkPhysicalDeviceMemoryProperties& memProps)
+Renderer::Renderer(const VkExtent2D& extent, const VkExtent3D& gridDim, const VkPhysicalDeviceMemoryProperties& memProps)
 :	Commands(memProps),
 	imageExtent(extent),
 	grid(gridDim)
@@ -144,7 +144,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	}
 	
 	vertexShaderFileSize = static_cast<size_t>(file.tellg());
-	vertexShader = static_cast<char*>(malloc(sizeof(char)*vertexShaderFileSize));
+	vertexShader = new char[vertexShaderFileSize]();
 	
 	file.seekg(0);
 	file.read(vertexShader, vertexShaderFileSize);
@@ -158,7 +158,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	}
 	
 	fragmentShaderFileSize = static_cast<size_t>(file.tellg());
-	fragmentShader = static_cast<char*>(malloc(sizeof(char)*fragmentShaderFileSize));
+	fragmentShader = new char[fragmentShaderFileSize]();
 	
 	file.seekg(0);
 	file.read(fragmentShader, fragmentShaderFileSize);
@@ -176,8 +176,8 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	vkCreateShaderModule(device, &shaderCreateInfo, nullptr, &fragmentShaderModule);
 	
-	free(fragmentShader);
-	free(vertexShader);
+	delete[] fragmentShader;
+	delete[] vertexShader;
 	
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -297,7 +297,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Pipeline layout creation failed" << std::cout;
+		throw std::runtime_error("Pipeline layout creation failed");
 	}
 	
 	VkAttachmentDescription colorAttachment = {};
@@ -340,7 +340,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Render pass creation failed" << std::cout;
+		throw std::runtime_error("Render pass creation failed");
 	}
 	
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -365,7 +365,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Pipeline creation failed" << std::cout;
+		throw std::runtime_error("Pipeline creation failed");
 	}
 
 	for (uint32_t i = 0; i < numFBOs; ++i)
@@ -383,7 +383,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 		
 		if (result != VK_SUCCESS)
 		{
-			std::cout << "Framebuffer creation failed" << std::cout;
+			throw std::runtime_error("Framebuffer creation failed");
 		}
 	}
 
@@ -396,7 +396,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Command pool creation failed" << std::cout;
+		throw std::runtime_error("Command pool creation failed");
 	}
 	
 	VkCommandBufferAllocateInfo allocInfo = {};
@@ -409,7 +409,7 @@ bool Renderer::Init(VkDevice& device, const VkFormat& surfaceFormat, const VkIma
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Command buffer creation failed" << std::cout;
+		throw std::runtime_error("Command buffer creation failed");
 	}
 	
 	SetupDynamicTransfer(device);
@@ -459,7 +459,7 @@ bool Renderer::Destroy(VkDevice& device)
 	return true;
 }
 
-void Renderer::ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer)
+void Renderer::ConstructFrames(const VkBuffer& heightBuffer, const VkBuffer& normalBuffer)
 {
 	bool result = false;
 	
@@ -502,7 +502,7 @@ void Renderer::ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer)
 	
 		if (result != VK_SUCCESS)
 		{
-			std::cout << "Command buffer end failed" << std::cout;
+			throw std::runtime_error("Command buffer end failed");
 		}
 	}
 }

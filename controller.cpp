@@ -77,7 +77,7 @@ bool Controller::Init()
 	uint32_t extensionCount = 0;
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-	VkExtensionProperties* extensions = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties)*extensionCount));
+	VkExtensionProperties* extensions = new VkExtensionProperties[extensionCount]();
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions);
 	
 	for(uint32_t i = 0; i < extensionCount; ++i)
@@ -121,7 +121,7 @@ bool Controller::Init()
 	
 	uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    VkLayerProperties* availableLayers = static_cast<VkLayerProperties*>(malloc(sizeof(VkLayerProperties)*layerCount));; 
+    VkLayerProperties* availableLayers = new VkLayerProperties[layerCount]();; 
 	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers);
 		
 	supported = false;
@@ -153,7 +153,7 @@ bool Controller::Init()
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Failed to create instance" << std::endl;
+		throw std::runtime_error("Failed to create instance");
 	}	
 	
 	VkDebugReportCallbackCreateInfoEXT callbackCreateInfo = {};
@@ -179,7 +179,7 @@ bool Controller::Init()
 		std::cout << "failed to find a device that supports Vulkan" << std::endl;	
 	}
 	
-	VkPhysicalDevice* devices = static_cast<VkPhysicalDevice*>(malloc(sizeof(VkPhysicalDevice)*deviceCount));
+	VkPhysicalDevice* devices = new VkPhysicalDevice[deviceCount]();
 	vkEnumeratePhysicalDevices(instance, &deviceCount, devices);
 	VkPhysicalDeviceProperties deviceProperties;
 	
@@ -212,11 +212,21 @@ bool Controller::Init()
 	
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
-	free(devices);
-	free(availableLayers);
-	free(extensions);
+	delete[] devices;
+	delete[] availableLayers;
+	delete[] extensions;
 	
 	CheckFormatPropertyType(VK_FORMAT_R32_SFLOAT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+	
+	return true;
+}
+
+bool Controller::Destroy()
+{
+	auto vkDestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+    vkDestroyDebugReportCallback(instance, callback, nullptr);
+	
+	vkDestroyInstance(instance, nullptr);
 	
 	return true;
 }
@@ -231,7 +241,7 @@ bool Controller::SetupQueue()
 		std::cout << "failed to find a device that supports Vulkan" << std::endl;	
 	}
 	
-	VkQueueFamilyProperties* queueFamilies = static_cast<VkQueueFamilyProperties*>(malloc(sizeof(VkQueueFamilyProperties)*queueFamilyCount));
+	VkQueueFamilyProperties* queueFamilies = new VkQueueFamilyProperties[queueFamilyCount]();
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies);
 	
 	for (uint32_t i = 0; i < queueFamilyCount; ++i)
@@ -250,12 +260,12 @@ bool Controller::SetupQueue()
 		std::cout << "failed to get all indicies" << std::endl;
 	}
 	
-	free(queueFamilies);
+	delete[] queueFamilies;
 	
 	return true;
 }
 
-bool Controller::SetupDevice(VkSurfaceKHR& surface)
+bool Controller::SetupDevice(const VkSurfaceKHR& surface)
 {
 	VkBool32 presentSupport = false;
 	vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyId, surface, &presentSupport);
@@ -278,7 +288,7 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 	uint32_t deviceExtensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, nullptr);
 
-    VkExtensionProperties* availableDeviceExtensions = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties)*deviceExtensionCount));
+    VkExtensionProperties* availableDeviceExtensions = new VkExtensionProperties[deviceExtensionCount]();
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &deviceExtensionCount, availableDeviceExtensions);
 	
 	uint32_t requestedDeviceExtensionCount = 1;
@@ -319,12 +329,12 @@ bool Controller::SetupDevice(VkSurfaceKHR& surface)
 		std::cout << "failed to create device" << std::endl;
 	}
 
-	free(availableDeviceExtensions);
+	delete[] availableDeviceExtensions;
 	
 	return true;
 }
 
-bool Controller::Configure(VkSurfaceKHR& surface)
+bool Controller::Configure(const VkSurfaceKHR& surface)
 {
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
 	
@@ -340,7 +350,7 @@ bool Controller::Configure(VkSurfaceKHR& surface)
 	return true;
 }
 
-void Controller::PrintCapabilities()
+void Controller::PrintCapabilities() const
 {
 	/*uint32_t minImageCount;
     uint32_t maxImageCount;
@@ -368,11 +378,11 @@ void Controller::PrintCapabilities()
 	std::cout << capabilities.supportedUsageFlags << std::endl;
 }
 
-bool Controller::PresentModeSupported(VkSurfaceKHR& surface, VkPresentModeKHR presentMode)
+bool Controller::PresentModeSupported(const VkSurfaceKHR& surface, VkPresentModeKHR presentMode)
 {
 	uint32_t presentModeCount;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
-	VkPresentModeKHR* supportedPresentModes = static_cast<VkPresentModeKHR*>(malloc(sizeof(VkPresentModeKHR)*presentModeCount));
+	VkPresentModeKHR* supportedPresentModes = new VkPresentModeKHR[presentModeCount]();
 	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, supportedPresentModes);
 	
 	bool supported = false;	
@@ -392,16 +402,16 @@ bool Controller::PresentModeSupported(VkSurfaceKHR& surface, VkPresentModeKHR pr
 		std::cout << "Present mode not supported" << std::endl;
 	}
 	
-	free(supportedPresentModes);
+	delete[] supportedPresentModes;
 	
 	return supported;
 }
 
-bool Controller::SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat surfaceFormat)
+bool Controller::SurfaceFormatSupported(const VkSurfaceKHR& surface, VkFormat surfaceFormat) const
 {
 	uint32_t formatCount;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-	VkSurfaceFormatKHR* surfaceFormats = static_cast<VkSurfaceFormatKHR*>(malloc(sizeof(VkSurfaceFormatKHR)*formatCount));
+	VkSurfaceFormatKHR* surfaceFormats = new VkSurfaceFormatKHR[formatCount]();
 	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, surfaceFormats);
 		
 	bool supported = false;
@@ -422,22 +432,12 @@ bool Controller::SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat surfaceF
 		std::cout << "Format not supported" << std::endl;
 	}
 	
-	free(surfaceFormats);
+	delete[] surfaceFormats;
 	
 	return supported;
 }
 
-bool Controller::Destroy()
-{
-	auto vkDestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
-    vkDestroyDebugReportCallback(instance, callback, nullptr);
-	
-	vkDestroyInstance(instance, nullptr);
-	
-	return true;
-}
-
-bool Controller::CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags)
+bool Controller::CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags) const
 {
 	VkFormatProperties formatProps;
 	vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);

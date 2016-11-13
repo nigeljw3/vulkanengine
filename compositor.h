@@ -39,7 +39,7 @@ public:
 	Compositor& operator=(Compositor &&) = delete;
 	
 	bool Init(VkDevice& device,
-			  VkSurfaceKHR& surface,
+			  const VkSurfaceKHR& surface,
 			  uint32_t width,
 			  uint32_t height,
 			  uint32_t queueFamilyId,
@@ -49,7 +49,6 @@ public:
 			  
 	void Loop();
 	bool Destroy(VkDevice& device);
-	//bool CheckExtensionsSupport(uint32_t extensionCount, const VkExtensionProperties* extensions) const;
 	
 	inline VkFormat GetSurfaceFormat() const { return surfaceFormat; }
 	inline VkPresentModeKHR GetPresentMode() const { return presentMode; }

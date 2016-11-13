@@ -30,7 +30,7 @@ Commands::Commands(const VkPhysicalDeviceMemoryProperties& memProps)
 {	
 }
 
-void Commands::SetupImage(VkDevice& device, VkImage& image, VkExtent3D& extent, VkFormat& format, VkDeviceMemory& memory, VkMemoryPropertyFlags props, VkBufferUsageFlags usage)
+void Commands::SetupImage(VkDevice& device, VkImage& image, const VkExtent3D& extent, const VkFormat& format, VkDeviceMemory& memory, VkMemoryPropertyFlags props, VkBufferUsageFlags usage)
 {
 	VkImageCreateInfo imageCreateInfo = {};
 	imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -86,8 +86,6 @@ bool Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
     bufferInfo.size = size;
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	
-	std::cout << "request size: " << size << std::endl;
 
     VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
 	
@@ -102,8 +100,6 @@ bool Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
 	
 	uint32_t allocSize;
 	uint32_t memTypeIndex = GetMemoryTypeIndex(device, memRequirements, memProperties, properties, allocSize);
-	
-	std::cout << "alloc size: " << allocSize << std::endl;
 	
     VkMemoryAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -122,7 +118,7 @@ bool Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
 	return true;
 }
 
-uint32_t Commands::GetMemoryTypeIndex(VkDevice& device, VkMemoryRequirements& memRequirements, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const
+uint32_t Commands::GetMemoryTypeIndex(VkDevice& device, const VkMemoryRequirements& memRequirements, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const
 {	
 	uint32_t memTypeIndex = vfsme::InvalidIndex;
 	

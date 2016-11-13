@@ -36,9 +36,9 @@ public:
 	Commands& operator=(Commands &&) = delete;
 	
 protected:
-	void SetupImage(VkDevice& device, VkImage& image, VkExtent3D& extent, VkFormat& format, VkDeviceMemory& memory, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage);
+	void SetupImage(VkDevice& device, VkImage& image, const VkExtent3D& extent, const VkFormat& format, VkDeviceMemory& memory, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage);
 	bool SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage);
-	uint32_t GetMemoryTypeIndex(VkDevice& device, VkMemoryRequirements& memReqs, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const;
+	uint32_t GetMemoryTypeIndex(VkDevice& device, const VkMemoryRequirements& memReqs, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const;
 	
 	const VkPhysicalDeviceMemoryProperties& memProperties;
 };

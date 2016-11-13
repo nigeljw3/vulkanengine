@@ -30,7 +30,7 @@ namespace vfsme
 class Renderer : Commands
 {
 public:
-	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, const VkPhysicalDeviceMemoryProperties& memProps);
+	Renderer(const VkExtent2D& screenExtent, const VkExtent3D& gridDim, const VkPhysicalDeviceMemoryProperties& memProps);
 	~Renderer();
 	
 	///@note Only define copy and move contructors and assignment operators if they are actually required
@@ -42,7 +42,7 @@ public:
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
 	bool Destroy(VkDevice& device);
 	
-	void ConstructFrames(VkBuffer& heightBuffer, VkBuffer& normalBuffer);
+	void ConstructFrames(const VkBuffer& heightBuffer, const VkBuffer& normalBuffer);
 	
 	inline VkCommandBuffer* GetFrame(uint32_t index) const { return &drawCommandBuffers[index]; }
 	
@@ -106,13 +106,11 @@ private:
 	uint32_t mat4Size;
 	uint32_t uboSize;
 	
-	glm::mat4 mvp;
-	
 	float* vertexInfo;
 	uint16_t* indices;
 	
 	uint32_t vertexInfoSize;
-	uint16_t numIndices;
+	uint32_t numIndices;
 	uint32_t indicesBufferSize;
 	uint32_t numVerts;
 	uint32_t numPrims;

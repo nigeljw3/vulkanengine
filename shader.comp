@@ -44,9 +44,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 void main() 
 {
     // Current SSBO index
-    //uint index = gl_LocalInvocationID.x;
 	uint index = gl_LocalInvocationIndex;
-	//uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
 	float kx = ubo.k * gl_LocalInvocationID.x * ubo.dx;
 	

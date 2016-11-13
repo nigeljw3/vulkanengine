@@ -54,7 +54,7 @@ public:
 	bool CreateSurface(VkInstance& instance, VkSurfaceKHR* surface);
 	void Loop(Compositor& composer, VkDevice& device);
 	bool DestroySurface(VkInstance& instance, VkSurfaceKHR& surface);
-	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);
+	bool CheckExtensionsSupport(uint32_t extensionCount, const VkExtensionProperties* extensions) const;
 
 private:
 	System() = default;

@@ -86,7 +86,7 @@ bool System::DestroySurface(VkInstance& instance, VkSurfaceKHR& surface)
 	return true;
 }
 
-bool System::CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions)
+bool System::CheckExtensionsSupport(uint32_t extensionCount, const VkExtensionProperties* extensions) const
 {
 	bool fullySupported = true;
 	

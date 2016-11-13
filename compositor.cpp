@@ -18,11 +18,9 @@
 #include "compositor.h"
 
 #include <iostream>
-#include <vector>
-#include <cstring>
 #include <fstream>
-#include <cstdio>
 #include <limits>
+#include <thread>
 
 namespace vfsme
 {
@@ -43,7 +41,7 @@ Compositor::~Compositor()
 }
 
 bool Compositor::Init(VkDevice& device,
-					  VkSurfaceKHR& surface,
+					  const VkSurfaceKHR& surface,
 					  uint32_t width,
 					  uint32_t height,
 					  uint32_t queueFamilyId,
@@ -52,10 +50,6 @@ bool Compositor::Init(VkDevice& device,
 					  uint32_t computeQueueIndex)
 {	
 	VkSurfaceTransformFlagBitsKHR transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-	
-	//VkSurfaceFormatKHR swapSurfaceFormat;
-	//swapSurfaceFormat.format = requiredFormat;
-	//swapSurfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
 	
 	VkExtent2D screenExtent = {width, height};
 
@@ -84,7 +78,7 @@ bool Compositor::Init(VkDevice& device,
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Swapchain creation failed" << std::endl;
+		throw std::runtime_error("Swapchain creation failed");
 	}
 	
 	vkGetDeviceQueue(device, queueFamilyId, graphicsQueueIndex, &graphicsQueue);
@@ -117,7 +111,7 @@ bool Compositor::Init(VkDevice& device,
 		
 		if (result != VK_SUCCESS)
 		{
-			std::cout << "Image view creation failed" << std::endl;
+			throw std::runtime_error("Image view creation failed");
 		}
 	}
 	
@@ -236,7 +230,7 @@ bool Compositor::Draw(VkDevice& device)
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Queue submit failed" << std::cout;
+		throw std::runtime_error("Queue submit failed");
 	}
 	
 	VkPresentInfoKHR presentInfo = {};

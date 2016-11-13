@@ -24,7 +24,7 @@
 namespace vfsme
 {
 
-Compute::Compute(VkExtent3D inputExtent, const VkPhysicalDeviceMemoryProperties& props)
+Compute::Compute(const VkExtent3D& inputExtent, const VkPhysicalDeviceMemoryProperties& props)
 : Commands(props),
   extent(inputExtent),
   uniformBufferSize(sizeof(float) * numWaveComponents),
@@ -32,7 +32,7 @@ Compute::Compute(VkExtent3D inputExtent, const VkPhysicalDeviceMemoryProperties&
   normalBufferSize(sizeof(float[4]) * inputExtent.width * inputExtent.height),  
   startTime(std::chrono::high_resolution_clock::now())
 {
-	float pi = 3.14;
+	const float pi = 3.14159;
 	wave.lambda = 6.0;
 	wave.k = 2.0*pi/wave.lambda;
 	wave.omega = 2.0;
@@ -207,7 +207,7 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	}
 	
 	size_t shaderFileSize = static_cast<size_t>(file.tellg());
-	char* shader = static_cast<char*>(malloc(sizeof(char)*shaderFileSize));
+	char* shader = new char[shaderFileSize]();
 	
 	file.seekg(0);
 	file.read(shader, shaderFileSize);
@@ -220,7 +220,7 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	
 	vkCreateShaderModule(device, &shaderCreateInfo, nullptr, &shaderModule);
 		
-	free(shader);
+	delete[] shader;
 	
 	VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
 	shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -237,7 +237,7 @@ void Compute::SetupQueue(VkDevice& device, uint32_t queueFamilyId)
 	
 	if (result != VK_SUCCESS)
 	{
-		std::cout << "Pipeline layout creation failed" << std::cout;
+		throw std::runtime_error("Pipeline layout creation failed");
 	}
 	
 	VkComputePipelineCreateInfo pipelineCreateInfo = {};

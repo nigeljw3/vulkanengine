@@ -29,7 +29,7 @@ namespace vfsme
 class Compute : Commands
 {
 public:
-	Compute(VkExtent3D extent, const VkPhysicalDeviceMemoryProperties& props);
+	Compute(const VkExtent3D& extent, const VkPhysicalDeviceMemoryProperties& props);
 	~Compute() = default;
 	
 	///@note Only define copy and move constructors and assignment operators if they are actually required
@@ -80,7 +80,7 @@ private:
 	
 	VkCommandPool commandPool;
 	
-	VkExtent3D extent;
+	const VkExtent3D& extent;
 	
 	VkDescriptorSet descriptorSet;
 	VkDescriptorSetLayout descriptorSetLayout = {};

@@ -39,16 +39,16 @@ public:
 
 	bool Init();
 	bool SetupQueue();
-	bool SetupDevice(VkSurfaceKHR& surface);
+	bool SetupDevice(const VkSurfaceKHR& surface);
 	bool Destroy();
 	
-	VkPhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
-	VkDevice& GetDevice() { return device; }
-	VkInstance& GetInstance() { return instance; }
+	inline VkPhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
+	inline VkDevice& GetDevice() { return device; }
+	inline VkInstance& GetInstance() { return instance; }
 	
-	bool Configure(VkSurfaceKHR& surface);
-	bool PresentModeSupported(VkSurfaceKHR& surface, VkPresentModeKHR presentMode);
-	bool SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat surfaceFormat);
+	bool Configure(const VkSurfaceKHR& surface);
+	bool PresentModeSupported(const VkSurfaceKHR& surface, VkPresentModeKHR presentMode);
+	bool SurfaceFormatSupported(const VkSurfaceKHR& surface, VkFormat surfaceFormat) const;
 	
 	const VkPhysicalDeviceMemoryProperties& GetMemoryProperties() const { return memProperties; }
 	
@@ -58,10 +58,10 @@ public:
 	inline uint32_t GetPresentQueueIndex() const { return presentQueueIndex; }
 	inline uint32_t GetComputeQueueIndex() const { return computeQueueIndex; }
 	
-	bool CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags);
+	bool CheckFormatPropertyType(VkFormat format, VkFormatFeatureFlagBits flags) const;
 	
 private:
-	void PrintCapabilities();
+	void PrintCapabilities() const;
 
 	VkDevice device;
 	VkPhysicalDevice physicalDevice;
