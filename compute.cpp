@@ -24,7 +24,7 @@
 namespace vfsme
 {
 
-Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props)
+Compute::Compute(VkExtent3D inputExtent, const VkPhysicalDeviceMemoryProperties& props)
 : Commands(props),
   extent(inputExtent),
   uniformBufferSize(sizeof(float) * numWaveComponents),
@@ -32,12 +32,12 @@ Compute::Compute(VkExtent3D inputExtent, VkPhysicalDeviceMemoryProperties& props
   normalBufferSize(sizeof(float[4]) * inputExtent.width * inputExtent.height),  
   startTime(std::chrono::high_resolution_clock::now())
 {
-	std::cout << "ubo size: " << uniformBufferSize << std::endl;
-}
-
-Compute::~Compute()
-{
-	
+	float pi = 3.14;
+	wave.lambda = 6.0;
+	wave.k = 2.0*pi/wave.lambda;
+	wave.omega = 2.0;
+	wave.dx = 0.5;
+	wave.amplitude = 1.0;
 }
 
 void Compute::Init(VkDevice& device)
@@ -342,23 +342,16 @@ void Compute::UpdateWave(VkDevice& device)
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 	
-	float pi = 3.14;
-	float lambda = 6.0;
-	float k = 2.0*pi/lambda;
-	float omega = 2.0;
-	float dx = 0.5;
-	float amplitude = 1.0;
-	
 	void* data;
     vkMapMemory(device, uniformBufferMemory, 0, uniformBufferSize, 0, &data);
 	
-	float* wave = static_cast<float*>(data);
+	float* waveData = static_cast<float*>(data);
 	
-	wave[0] = time;
-	wave[1] = dx;
-	wave[2] = k;
-	wave[3] = omega;
-	wave[4] = amplitude;
+	waveData[0] = time;
+	waveData[1] = wave.dx;
+	waveData[2] = wave.k;
+	waveData[3] = wave.omega;
+	waveData[4] = wave.amplitude;
 	
 	vkUnmapMemory(device, uniformBufferMemory);
 }

@@ -37,12 +37,12 @@ const uint32_t numLayers = 2;
 
 Controller::Controller()
 {
-	queuePriorities = static_cast<float*>(malloc(sizeof(float)*queueCount));
+	queuePriorities = new float[queueCount]();
 }
 
 Controller::~Controller()
 {
-	free(queuePriorities);
+	delete[] queuePriorities;
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

@@ -30,12 +30,14 @@ namespace vfsme
 class Renderer : Commands
 {
 public:
-	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps);
+	Renderer(VkExtent2D& screenExtent, const VkExtent3D& gridDim, const VkPhysicalDeviceMemoryProperties& memProps);
 	~Renderer();
 	
-	///@note Only define copy and assignment operators if they are actually required
-	Renderer& operator=(const Renderer&) = delete;
+	///@note Only define copy and move contructors and assignment operators if they are actually required
     Renderer(const Renderer&) = delete;
+	Renderer(Renderer&&) = delete;
+	Renderer& operator=(const Renderer&) = delete;
+	Renderer& operator=(Renderer &&) = delete;
 	
 	bool Init(VkDevice& device, const VkFormat& surfaceFormat, const VkImageView* imageViews, uint32_t queueFamilyId);
 	bool Destroy(VkDevice& device);

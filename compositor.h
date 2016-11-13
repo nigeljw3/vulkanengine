@@ -29,12 +29,14 @@ namespace vfsme
 class Compositor
 {
 public:
-	Compositor(VkPhysicalDeviceMemoryProperties& memProperties);
+	explicit Compositor(const VkPhysicalDeviceMemoryProperties& memProperties);
 	~Compositor();
 	
-	///@note Only define copy and assignment operators if they are actually required
-	Compositor& operator=(const Compositor&) = delete;
+	///@note Only define copy and move constructors and assignment operators if they are actually required
     Compositor(const Compositor&) = delete;
+	Compositor(Compositor&&) = delete;
+	Compositor& operator=(const Compositor&) = delete;
+	Compositor& operator=(Compositor &&) = delete;
 	
 	bool Init(VkDevice& device,
 			  VkSurfaceKHR& surface,
@@ -47,7 +49,7 @@ public:
 			  
 	void Loop();
 	bool Destroy(VkDevice& device);
-	bool CheckExtensionsSupport(uint32_t extensionCount, VkExtensionProperties* extensions);
+	//bool CheckExtensionsSupport(uint32_t extensionCount, const VkExtensionProperties* extensions) const;
 	
 	inline VkFormat GetSurfaceFormat() const { return surfaceFormat; }
 	inline VkPresentModeKHR GetPresentMode() const { return presentMode; }
@@ -70,7 +72,7 @@ private:
 	VkSwapchainKHR swapChain;
 	VkImageView* imageViews;
 	
-	VkPhysicalDeviceMemoryProperties memProperties;
+	const VkPhysicalDeviceMemoryProperties& memProperties;
 	
 	VkQueue presentQueue;
 	VkQueue graphicsQueue;

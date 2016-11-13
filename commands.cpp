@@ -25,15 +25,9 @@
 namespace vfsme
 {
 
-Commands::Commands(VkPhysicalDeviceMemoryProperties& memProps)
+Commands::Commands(const VkPhysicalDeviceMemoryProperties& memProps)
 : memProperties(memProps)
-{
-	
-}
-
-Commands::~Commands()
-{
-	
+{	
 }
 
 void Commands::SetupImage(VkDevice& device, VkImage& image, VkExtent3D& extent, VkFormat& format, VkDeviceMemory& memory, VkMemoryPropertyFlags props, VkBufferUsageFlags usage)
@@ -128,7 +122,7 @@ bool Commands::SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& m
 	return true;
 }
 
-uint32_t Commands::GetMemoryTypeIndex(VkDevice& device, VkMemoryRequirements& memRequirements, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize)
+uint32_t Commands::GetMemoryTypeIndex(VkDevice& device, VkMemoryRequirements& memRequirements, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const
 {	
 	uint32_t memTypeIndex = vfsme::InvalidIndex;
 	

@@ -38,7 +38,7 @@
 namespace vfsme
 {
 
-Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDeviceMemoryProperties& memProps)
+Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, const VkPhysicalDeviceMemoryProperties& memProps)
 :	Commands(memProps),
 	imageExtent(extent),
 	grid(gridDim)
@@ -51,12 +51,12 @@ Renderer::Renderer(VkExtent2D& extent, const VkExtent3D& gridDim, VkPhysicalDevi
 	mat4Size = sizeof(float) * 16;
 	uboSize = mat4Size * 3 + sizeof(float[3]);
 	
-	vertexInfo = new float[vertexInfoSize];
-	indices = new uint16_t[indicesBufferSize];
-	framebuffers = new VkFramebuffer[numFBOs];
-	drawCommandBuffers = new VkCommandBuffer[numDrawCmdBuffers];
-	attributeDescriptions = new VkVertexInputAttributeDescription[numAttrDesc];
-	bindingDescriptions = new VkVertexInputBindingDescription[numBindDesc];
+	vertexInfo = new float[vertexInfoSize]();
+	indices = new uint16_t[indicesBufferSize]();
+	framebuffers = new VkFramebuffer[numFBOs]();
+	drawCommandBuffers = new VkCommandBuffer[numDrawCmdBuffers]();
+	attributeDescriptions = new VkVertexInputAttributeDescription[numAttrDesc]();
+	bindingDescriptions = new VkVertexInputBindingDescription[numBindDesc]();
 }
 
 Renderer::~Renderer()

@@ -29,12 +29,14 @@ namespace vfsme
 class Compute : Commands
 {
 public:
-	Compute(VkExtent3D extent, VkPhysicalDeviceMemoryProperties& props);
-	~Compute();
+	Compute(VkExtent3D extent, const VkPhysicalDeviceMemoryProperties& props);
+	~Compute() = default;
 	
-	///@note Only define copy and assignment operators if they are actually required
-	Compute& operator=(const Compute&) = delete;
+	///@note Only define copy and move constructors and assignment operators if they are actually required
     Compute(const Compute&) = delete;
+	Compute(Compute&&) = delete;
+	Compute& operator=(const Compute&) = delete;
+	Compute& operator=(Compute &&) = delete;
 	
 	void Init(VkDevice& device);
 	void Destroy(VkDevice& device);
@@ -48,6 +50,15 @@ public:
 	void UpdateWave(VkDevice& device);
 	
 private:
+	struct Wave
+	{
+		float lambda;
+		float k;
+		float omega;
+		float dx;
+		float amplitude;
+	} wave = {};
+
 	const uint32_t numWaveComponents = 5;
 
 	VkShaderModule shaderModule;

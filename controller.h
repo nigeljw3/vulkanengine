@@ -31,9 +31,11 @@ public:
 	Controller();
 	~Controller();
 	
-	///@note Only define copy and assignment operators if they are actually required
+	///@note Only define copy and move contructors and assignment operators if they are actually required
+	Controller(const Controller&) = delete;
+	Controller(Controller&&) = delete;
 	Controller& operator=(const Controller&) = delete;
-    Controller(const Controller&) = delete;
+	Controller& operator=(Controller &&) = delete;
 
 	bool Init();
 	bool SetupQueue();
@@ -43,11 +45,12 @@ public:
 	VkPhysicalDevice& GetPhysicalDevice() { return physicalDevice; }
 	VkDevice& GetDevice() { return device; }
 	VkInstance& GetInstance() { return instance; }
+	
 	bool Configure(VkSurfaceKHR& surface);
 	bool PresentModeSupported(VkSurfaceKHR& surface, VkPresentModeKHR presentMode);
 	bool SurfaceFormatSupported(VkSurfaceKHR& surface, VkFormat surfaceFormat);
 	
-	VkPhysicalDeviceMemoryProperties& GetMemoryProperties() { return memProperties; }
+	const VkPhysicalDeviceMemoryProperties& GetMemoryProperties() const { return memProperties; }
 	
 	//inline VkSurfaceCapabilitiesKHR* GetCapabilities() { return &capabilities; }
 	inline uint32_t GetQueueFamilyId() const { return queueFamilyId; }

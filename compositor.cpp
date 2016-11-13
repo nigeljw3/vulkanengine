@@ -27,19 +27,19 @@
 namespace vfsme
 {
 
-Compositor::Compositor(VkPhysicalDeviceMemoryProperties& memProps)
+Compositor::Compositor(const VkPhysicalDeviceMemoryProperties& memProps)
 : imageCount(2),
   drawIndex(0),
   memProperties(memProps)
 {
-	images = static_cast<VkImage*>(malloc(sizeof(VkImage)*imageCount));
-	imageViews = static_cast<VkImageView*>(malloc(sizeof(VkImageView)*imageCount));
+	images = new VkImage[imageCount]();
+	imageViews = new VkImageView[imageCount]();
 }
 
 Compositor::~Compositor()
 {
-	free(images);
-	free(imageViews);
+	delete[] images;
+	delete[] imageViews;
 }
 
 bool Compositor::Init(VkDevice& device,
@@ -120,9 +120,6 @@ bool Compositor::Init(VkDevice& device,
 			std::cout << "Image view creation failed" << std::endl;
 		}
 	}
-	
-	//std::function<uint32_t(VkDevice& device, VkBuffer& buffer, VkMemoryPropertyFlags properties, uint32_t& allocSize)> callback;
-	//callback = std::bind(&Compositor::GetMemoryTypeIndex, this, std::placeholders::_1);
 	
 	graphicsEngine = new Renderer(screenExtent, grid, memProperties);
 	

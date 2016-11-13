@@ -26,19 +26,21 @@ namespace vfsme
 class Commands
 {
 public:
-	explicit Commands(VkPhysicalDeviceMemoryProperties& memProperties);
-	~Commands();
+	explicit Commands(const VkPhysicalDeviceMemoryProperties& memProperties);
+	~Commands() = default;
 	
-	///@note Only define copy and assignment operators if they are actually required
-	Commands& operator=(const Commands&) = delete;
+	///@note Only define copy and move constructors and assignment operators if they are actually required
     Commands(const Commands&) = delete;
+	Commands(Commands&&) = delete;
+	Commands& operator=(const Commands&) = delete;
+	Commands& operator=(Commands &&) = delete;
 	
 protected:
 	void SetupImage(VkDevice& device, VkImage& image, VkExtent3D& extent, VkFormat& format, VkDeviceMemory& memory, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage);
 	bool SetupBuffer(VkDevice& device, VkBuffer& buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties, VkBufferUsageFlags usage);
-	uint32_t GetMemoryTypeIndex(VkDevice& device, VkMemoryRequirements& memReqs, VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize);
-
-	VkPhysicalDeviceMemoryProperties memProperties;
+	uint32_t GetMemoryTypeIndex(VkDevice& device, VkMemoryRequirements& memReqs, const VkPhysicalDeviceMemoryProperties& props, VkMemoryPropertyFlags propFlags, uint32_t& allocSize) const;
+	
+	const VkPhysicalDeviceMemoryProperties& memProperties;
 };
 
 };
